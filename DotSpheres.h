@@ -1,0 +1,68 @@
+// Copyright(c) 2021, Richardson Lab at Duke
+// Licensed under the Apache 2 license
+
+#pragma once
+
+#include <vector>
+#include <string>
+#include <scitbx/vec3.h>
+
+namespace molprobity {
+  namespace probe {
+
+    /// The type to be used for a single coordinate in space
+    typedef double Coord;
+
+    /// The type used to store a dot
+    typedef scitbx::vec3<Coord> Dot;
+
+    /// @brief Structure that holds a vector of dots surrounding a sphere
+    ///
+    /// This structure stores a vector of dots surrounding a sphere with a specified
+    /// radius and density.  Once constructed, its dots and parameters cannot be changed.
+    class DotSphere {
+    public:
+      /// @brief Normally-used constructor that fills in dots based on parameters
+      /// @param [in] radius The radius of the sphere in angstroms, distance from the origin to dots.
+      ///         If this is zero or negative, the object will have no dots.
+      /// @param [in] density The density of the dots in square angstroms.
+      ///         If this is zero or negative, the object will have no dots.
+      ///         This specifies a desired density; the actual density may be slightly different.
+      DotSphere(double radius, double density);
+
+      /// @brief Returns the vector of dots on the sphere
+      const std::vector<Dot>& dots() const { return m_vec; }
+
+      /// @brief Accessor method for the radius used to construct the sphere.
+      double radius() const { return m_rad; }
+
+      /// @brief Accessor method for the density used to construct the sphere.
+      double density() const { return m_dens; }
+
+      /// @brief Report whether two spheres have been constructed with identical parameters.
+      bool operator==(const DotSphere& d) const { return m_rad == d.m_rad && m_dens == d.m_dens; }
+
+      /// @brief Report whether two spheres have been constructed with different parameters.
+      bool operator!=(const DotSphere& d) const { return !(*this == d); }
+      
+      //===========================================================================
+      // Seldom-used methods below here.
+
+      /// @brief Default constructor makes an empty vector
+      DotSphere() : m_rad(0), m_dens(0) {};
+
+      /// @brief Test method to verify that the class is behaving as intended.
+      /// @return Empty string on success, string telling what went wrong on failure.
+      static std::string test();
+
+    protected:
+      double  m_rad;            ///< Radius of the sphere in Angstroms
+      double  m_dens;           ///< Dot density
+      std::vector<Dot> m_vec;   ///< Stores the vector of dots
+    };
+
+    /// @brief Test function to verify that all classes are behaving as intended.
+    /// @return Empty string on success, string telling what went wrong on failure.
+    std::string test();
+  }
+}

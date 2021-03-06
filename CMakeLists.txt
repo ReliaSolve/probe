@@ -5,36 +5,29 @@ if (WIN32)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif ()
 
+# Find the packages we require and can use
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+find_package(CCTBX REQUIRED)
+find_package(Boost REQUIRED)
+
 set(probe_SOURCES
-	abin.c
-	atomprops.c
-	autobondrot.c
-	dots.c
-	geom3d.c
-	hybrid_36_c.c
-	readPDBrecs.c
-	parse.c
-	select.c
-	stdconntable.c
-	utility.c
-	probe.c
+	DotSpheres.cpp
 )
 
 set(probe_HEADERS
-	abin.h
-	atomprops.h
-	autobondrot.h
-	dots.h
-	geom3d.h
-	hybrid_36_c.h
-	parse.h
-	readPDBrecs.h
-	select.h
-	stdconntable.h
-	utility.h
+  DotSpheres.h
 )
 
-add_executable(probe ${probe_SOURCES} ${probe_HEADERS})
+add_library(probeLib ${probe_SOURCES} ${probe_HEADERS})
+target_include_directories(probeLib PUBLIC SYSTEM 
+  ${CCTBX_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIR})
 if (NOT WIN32)
-  target_link_libraries(probe m)
+  target_link_libraries(probeLib PUBLIC m)
+endif()
+
+add_executable(tst_probe tst_probe.cpp)
+target_link_libraries(tst_probe probeLib)
+if (NOT WIN32)
+  target_link_libraries(tst_probe m)
 endif()
