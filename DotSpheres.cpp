@@ -124,6 +124,45 @@ std::string DotSphere::test()
   return "";
 }
 
+const DotSphere& DotSphereCache::get_sphere(double radius)
+{
+  std::map<double, DotSphere>::const_iterator ret = m_spheres.find(radius);
+  if (ret == m_spheres.end()) {
+    // We don't have a sphere with this radius -- create one and insert it
+    std::pair<std::map<double, DotSphere>::iterator, bool> iRet = 
+      m_spheres.emplace(radius, DotSphere(radius, m_dens));
+    ret = iRet.first;
+  }
+  return ret->second;
+}
+
+std::string DotSphereCache::test()
+{
+  // Object to use for our tests
+  DotSphereCache dsc(10);
+
+  // Test creation of a single sphere
+  const DotSphere& sp1 = dsc.get_sphere(1.0);
+  if (dsc.size() != 1) {
+    return "molprobity::probe::DotSphereCache::test(): Single sphere creation failed";
+  }
+
+  // Ask for another sphere of the same size and make sure we get the same one.
+  const DotSphere& sp2 = dsc.get_sphere(1.0);
+  if (dsc.size() != 1 || sp1 != sp2) {
+    return "molprobity::probe::DotSphereCache::test(): Identical sphere creation failed";
+  }
+
+  // Ask a sphere of a differnt size and make sure we get a different one.
+  const DotSphere& sp3 = dsc.get_sphere(2.0);
+  if (dsc.size() != 2 || sp1 == sp3) {
+    return "molprobity::probe::DotSphereCache::test(): Unique sphere creation failed";
+  }
+
+  // All tests passed.
+  return "";
+}
+
 std::string test()
 {
   std::string ret;
@@ -134,7 +173,11 @@ std::string test()
     return std::string("molprobity::probe::test(): DotSphere test failed: ") + ret;
   }
 
-  /// @todo
+  /// Test DotSphereCache class
+  ret = DotSphereCache::test();
+  if (!ret.empty()) {
+    return std::string("molprobity::probe::test(): DotSphereCache test failed: ") + ret;
+  }
 
   // All tests passed.
   return "";

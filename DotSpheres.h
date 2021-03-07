@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include <scitbx/vec3.h>
 
 namespace molprobity {
@@ -48,7 +49,7 @@ namespace molprobity {
       //===========================================================================
       // Seldom-used methods below here.
 
-      /// @brief Default constructor makes an empty vector
+      /// @brief Default constructor makes an empty vector of dots
       DotSphere() : m_rad(0), m_dens(0) {};
 
       /// @brief Test method to verify that the class is behaving as intended.
@@ -59,6 +60,39 @@ namespace molprobity {
       double  m_rad;            ///< Radius of the sphere in Angstroms
       double  m_dens;           ///< Dot density
       std::vector<Dot> m_vec;   ///< Stores the vector of dots
+    };
+
+    /// @brief Constructs new DotSphere objects as needed, reusing existing ones when it can.
+    ///
+    /// This structure minimizes the number of DotSphere objects required for a number of
+    /// atoms by returning references to already-constructed spheres when asked for another
+    /// with a radius that it has already constructed.  All the spheres generated have the
+    /// same density.
+    class DotSphereCache {
+    public:
+      /// @brief Constructor for spheres of a given density.
+      /// @param [in] Density value for all spheres constructed by this map
+      DotSphereCache(double density) : m_dens(density) {}
+
+      /// @brief Return a reference to a sphere of specified radius, building if needed.
+      /// @param [in] radius The radius of the sphere
+      /// @return Reference to a sphere of the specified radius
+      const DotSphere& get_sphere(double radius);
+
+      /// @brief Return the total number of unique spheres created.
+      /// @return The number of unique spheres in the cache
+      size_t size() const { return m_spheres.size(); }
+
+      //===========================================================================
+      // Seldom-used methods below here.
+
+      /// @brief Test method to verify that the class is behaving as intended.
+      /// @return Empty string on success, string telling what went wrong on failure.
+      static std::string test();
+
+    protected:
+      double  m_dens;                         ///< Density of the constructed spheres
+      std::map<double, DotSphere> m_spheres;  ///< Already-constructed spheres by radius
     };
 
     /// @brief Test function to verify that all classes are behaving as intended.
