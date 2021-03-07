@@ -15,9 +15,7 @@ def RunProbe():
   sphere1 = cache.get_sphere(1)
   dots = sphere1.dots()
   print(' Found',len(dots),'dots')
-  if len(dots) > 0:
-    print('First dot is',dots[0])
-    print('First dot is at',dots[0][0],dots[0][1],dots[0][2])
+  print('First dot is at',dots[0].elems[0],dots[0].elems[1],dots[0].elems[2])
 
   return ret
 

@@ -7,20 +7,32 @@
 using namespace boost::python;
 using namespace molprobity::probe;
 
+/// @brief Helper function to wrap the Dot internal array so we can read it.
+/// @todo Would like to make it so that we can write these values as well
+boost::python::tuple wrap_vec3_array(Dot const& d) {
+  boost::python::list a;
+  for (int i = 0; i < d.size(); ++i) {
+    a.append(d.elems[i]);
+  }
+  return boost::python::tuple(a);
+}
+
 BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
   // Describe and name compound classes that we need access to.
-  typedef scitbx::vec3<double> Dot;
-  //class_<Dot>("Dot")
-  //  .def(vector_indexing_suite<Dot>())
-  //  ;
+  class_<Dot>("Dot", init<double, double, double>())
+    .def(init<>())
+    .def("size", &Dot::size)
+    .add_property("elems", wrap_vec3_array)
+  ;
 
+  // Describe vectors we need access to
   typedef std::vector<Dot> DotList;
   class_<DotList>("DotList")
     .def(vector_indexing_suite<DotList>())
   ;
 
-  // Export the classes
+  // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
     .def(init<>())
     .def("dots", &DotSphere::dots, return_internal_reference<>())
