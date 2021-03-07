@@ -6,7 +6,8 @@
 
 int main(int argc, const char* argv[])
 {
-  std::string ret = molprobity::probe::test();
+  // Test DotSpheres module.
+  std::string ret = molprobity::probe::DotSpheres_test();
   if (!ret.empty()) {
     std::cerr << "Error: " << ret << std::endl;
     return 1;

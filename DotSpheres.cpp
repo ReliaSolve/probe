@@ -163,20 +163,20 @@ std::string DotSphereCache::test()
   return "";
 }
 
-std::string test()
+std::string DotSpheres_test()
 {
   std::string ret;
 
   /// Test DotSphere class
   ret = DotSphere::test();
   if (!ret.empty()) {
-    return std::string("molprobity::probe::test(): DotSphere test failed: ") + ret;
+    return std::string("molprobity::probe::DotSpheres_test(): failed: ") + ret;
   }
 
   /// Test DotSphereCache class
   ret = DotSphereCache::test();
   if (!ret.empty()) {
-    return std::string("molprobity::probe::test(): DotSphereCache test failed: ") + ret;
+    return std::string("molprobity::probe::DotSpheres_test(): failed: ") + ret;
   }
 
   // All tests passed.

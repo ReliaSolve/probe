@@ -97,6 +97,6 @@ namespace molprobity {
 
     /// @brief Test function to verify that all classes are behaving as intended.
     /// @return Empty string on success, string telling what went wrong on failure.
-    std::string test();
+    std::string DotSpheres_test();
   }
 }
