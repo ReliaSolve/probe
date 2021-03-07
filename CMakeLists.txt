@@ -79,7 +79,7 @@ if (USE_PYTHON)
   add_custom_command(
     TARGET mmtbx_probe_ext POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-      ${CMAKE_SOURCE_DIR}/probe.py
+      ${CMAKE_SOURCE_DIR}/tst_probe.py
       ${CMAKE_CURRENT_BINARY_DIR}
   )
 endif()
