@@ -7,8 +7,10 @@
 using namespace boost::python;
 using namespace molprobity::probe;
 
-/// @brief Helper function to wrap the Dot internal array so we can read it.
-/// @todo Would like to make it so that we can write these values as well
+/// @brief Helper function to wrap the Dot internal array so we can read its elements.
+///
+/// If you want to change values in a Dot, construct a new one using the 3-parameter
+/// constructor.
 boost::python::tuple wrap_vec3_array(Dot const& d) {
   boost::python::list a;
   for (int i = 0; i < d.size(); ++i) {

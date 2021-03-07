@@ -5,11 +5,9 @@
 import sys
 import mmtbx_probe_ext as probe
 
-def RunProbe():
-  ret = 0
-  print('Testing Probe objects')
-  probe.DotSpheres_test()
+def RunProbeTests():
 
+  # Make sure we can get at the DotSphere objects and their methods
   print('Making DotSphere from cache and getting its dots')
   cache = probe.DotSphereCache(10)
   sphere1 = cache.get_sphere(1)
@@ -17,7 +15,8 @@ def RunProbe():
   print(' Found',len(dots),'dots')
   print('First dot is at',dots[0].elems[0],dots[0].elems[1],dots[0].elems[2])
 
-  return ret
+  print('Testing DotSphere objects')
+  return probe.DotSpheres_test()
 
 if __name__ == '__main__':
 
@@ -29,4 +28,7 @@ if __name__ == '__main__':
   for i in range(1,len(sys.argv)):
     fileName = sys.argv[i]
 
-  sys.exit(RunProbe())
+  ret = RunProbeTests()
+  if len(ret) == 0:
+    print('Success!')
+  sys.exit(ret)
