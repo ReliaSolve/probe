@@ -49,7 +49,7 @@ DotSphere::DotSphere(double radius, double density)
       x0 = cos(theta) * xy0;
       y0 = sin(theta) * xy0;
 
-      m_vec.push_back(molprobity::probe::Dot(x0, y0 * cosang - z0 * sinang, y0 * sinang + z0 * cosang));
+      m_vec.push_back(molprobity::probe::Point(x0, y0 * cosang - z0 * sinang, y0 * sinang + z0 * cosang));
     }
     odd = !odd;
   }
@@ -104,9 +104,9 @@ std::string DotSphere::test()
   {
     DotSphere d(1, 5);
     bool px = false, mx = false, py = false, my = false, pz = false, mz = false;
-    const std::vector<Dot>& dots = d.dots();
+    const std::vector<Point>& dots = d.dots();
     for (size_t i = 0; i < dots.size(); i++) {
-      Dot dot = dots[i];
+      Point dot = dots[i];
       if (dot[0] > 0) { px = true; }
       if (dot[0] < 0) { mx = true; }
       if (dot[1] > 0) { py = true; }

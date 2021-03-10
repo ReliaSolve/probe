@@ -7,11 +7,11 @@
 using namespace boost::python;
 using namespace molprobity::probe;
 
-/// @brief Helper function to wrap the Dot internal array so we can read its elements.
+/// @brief Helper function to wrap the Point internal array so we can read its elements.
 ///
-/// If you want to change values in a Dot, construct a new one using the 3-parameter
+/// If you want to change values in a Point, construct a new one using the 3-parameter
 /// constructor.
-boost::python::tuple wrap_vec3_array(Dot const& d) {
+boost::python::tuple wrap_vec3_array(Point const& d) {
   boost::python::list a;
   for (int i = 0; i < d.size(); ++i) {
     a.append(d.elems[i]);
@@ -22,16 +22,16 @@ boost::python::tuple wrap_vec3_array(Dot const& d) {
 BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
   // Describe and name compound classes that we need access to.
-  class_<Dot>("Dot", init<double, double, double>())
+  class_<Point>("Point", init<double, double, double>())
     .def(init<>())
-    .def("size", &Dot::size)
+    .def("size", &Point::size)
     .add_property("elems", wrap_vec3_array)
   ;
 
   // Describe vectors we need access to
-  typedef std::vector<Dot> DotList;
-  class_<DotList>("DotList")
-    .def(vector_indexing_suite<DotList>())
+  typedef std::vector<Point> PointList;
+  class_<PointList>("PointList")
+    .def(vector_indexing_suite<PointList>())
   ;
 
   // Export the classes we define

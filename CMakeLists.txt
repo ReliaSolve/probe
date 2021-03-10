@@ -44,16 +44,25 @@ endif()
 
 set(probe_SOURCES
 	DotSpheres.cpp
+  SpatialQuery.cpp
 )
 
 set(probe_HEADERS
+  Common.h
   DotSpheres.h
+  SpatialQuery.h
 )
 
 add_library(probeLib ${probe_SOURCES} ${probe_HEADERS})
 target_include_directories(probeLib PUBLIC SYSTEM 
   ${CCTBX_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR})
+target_link_libraries(probeLib
+    PUBLIC
+    ${CCTBX_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${PYTHON_LIBRARIES}
+)
 if (NOT WIN32)
   target_link_libraries(probeLib PUBLIC m)
 endif()
@@ -74,7 +83,7 @@ if (USE_PYTHON)
   # Note: To make this work on Windows, you need to copy the boost_python*.dll file into the
   # executable directory to avoid an error about "DLL load failed: The specified module could not be found"
   PYTHON_ADD_MODULE(mmtbx_probe_ext probe_bpl.cpp)
-  target_link_libraries(mmtbx_probe_ext PRIVATE probeLib ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+  target_link_libraries(mmtbx_probe_ext PRIVATE probeLib)
 
   add_custom_command(
     TARGET mmtbx_probe_ext POST_BUILD

@@ -17,10 +17,24 @@ find_path(SCITBX_SRC_INCLUDE_DIR scitbx/vec3.h
 
 set(CCTBX_INCLUDE_DIRS ${SCITBX_INCLUDE_DIR} ${SCITBX_SRC_INCLUDE_DIR})
 
+find_library(IOTBX_PDB_LIBRARY
+	NAMES
+	iotbx_pdb
+	PATH_SUFFIXES
+	${_libsuffixes}
+	HINTS
+	"C:/cctbx/build/lib"
+	"C:/tmp/cctbx/build/lib"
+	PATHS
+	C:/usr/local
+	/usr/local)
+
+set(CCTBX_LIBRARIES ${IOTBX_PDB_LIBRARY})
+
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set CCTBX_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(CCTBX DEFAULT_MSG
-                                  SCITBX_INCLUDE_DIR)
+                                  IOTBX_PDB_LIBRARY SCITBX_INCLUDE_DIR)
 
 mark_as_advanced(SCITBX_INCLUDE_DIR SCITBX_SRC_INCLUDE_DIR)

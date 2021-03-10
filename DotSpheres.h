@@ -6,16 +6,10 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <scitbx/vec3.h>
+#include "Common.h"
 
 namespace molprobity {
   namespace probe {
-
-    /// The type to be used for a single coordinate in space
-    typedef double Coord;
-
-    /// The type used to store a dot
-    typedef scitbx::vec3<Coord> Dot;
 
     /// @brief Structure that holds a vector of dots surrounding a sphere
     ///
@@ -32,7 +26,7 @@ namespace molprobity {
       DotSphere(double radius, double density);
 
       /// @brief Returns the vector of dots on the sphere
-      const std::vector<Dot>& dots() const { return m_vec; }
+      const std::vector<Point>& dots() const { return m_vec; }
 
       /// @brief Accessor method for the radius used to construct the sphere.
       double radius() const { return m_rad; }
@@ -59,7 +53,7 @@ namespace molprobity {
     protected:
       double  m_rad;            ///< Radius of the sphere in Angstroms
       double  m_dens;           ///< Dot density
-      std::vector<Dot> m_vec;   ///< Stores the vector of dots
+      std::vector<Point> m_vec;   ///< Stores the vector of dots
     };
 
     /// @brief Constructs new DotSphere objects as needed, reusing existing ones when it can.

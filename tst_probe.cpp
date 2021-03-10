@@ -2,12 +2,22 @@
 // Licensed under the Apache 2 license
 
 #include "DotSpheres.h"
+#include "SpatialQuery.h"
 #include <iostream>
 
 int main(int argc, const char* argv[])
 {
+  std::string ret;
+
   // Test DotSpheres module.
-  std::string ret = molprobity::probe::DotSpheres_test();
+  ret = molprobity::probe::DotSpheres_test();
+  if (!ret.empty()) {
+    std::cerr << "Error: " << ret << std::endl;
+    return 1;
+  }
+
+  // Test SpatialQuery module.
+  ret = molprobity::probe::SpatialQuery_test();
   if (!ret.empty()) {
     std::cerr << "Error: " << ret << std::endl;
     return 1;
