@@ -74,9 +74,11 @@ namespace molprobity {
       /// @brief the meat of the constructor, so it can be called by all constructors.
       void initialize(Point lowerBounds, Point upperBounds, Point binSize);
 
-      std::array<Coord, 3>   m_lowerBounds; ///< Location of the lower corner of the grid in all dimensions
-      std::array<size_t, 3>  m_gridSize;    ///< Number of grid points in each axis
-      Point   m_binSize;        ///< Width of a bin in each of the 3 directions
+      static const Coord DEFAULT_BIN_SIZE;  ///< Default size of a grid bin in X, Y, and Z.
+
+      Point   m_lowerBounds;            ///< Location of the lower corner of the grid in all dimensions
+      std::array<size_t, 3> m_gridSize; ///< Number of grid points in each axis
+      Point   m_binSize;                ///< Width of a bin in each of the 3 directions
 
       /// We need the less-than operator to be defined on our atom type so that we can
       /// insert it into a set.
