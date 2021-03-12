@@ -43,12 +43,14 @@ if (NOT Boost_FOUND)
 endif()
 
 set(probe_SOURCES
+  Scoring.cpp
 	DotSpheres.cpp
   SpatialQuery.cpp
 )
 
 set(probe_HEADERS
   Common.h
+  Scoring.h
   DotSpheres.h
   SpatialQuery.h
 )

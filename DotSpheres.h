@@ -32,6 +32,9 @@ namespace molprobity {
       double radius() const { return m_rad; }
 
       /// @brief Accessor method for the density used to construct the sphere.
+      ///
+      /// This is used to normalize the scores to make them comparable for calculations
+      /// done with different densities.
       double density() const { return m_dens; }
 
       /// @brief Report whether two spheres have been constructed with identical parameters.
