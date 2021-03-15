@@ -31,6 +31,13 @@ ContactResult closest_contact(Point dot, Point atom, double atom_radius)
   return ret;
 }
 
+AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
+  iotbx::pdb::hierarchy::atom sourceAtom, iotbx::pdb::hierarchy::atom targetAtom,
+  std::vector<Point> dots, double density, bool onlyBumps)
+{
+
+}
+
 //===========================================================================================================
 // Testing code below here
 
@@ -43,6 +50,12 @@ std::string Scoring_test()
 {
   std::string ret;
   ContactResult res;
+
+  // Test the AtomVsAtomDotScorer class
+  ret = AtomVsAtomDotScorer::test();
+  if (ret.size() > 0) {
+    return std::string("Scoring_test: failed: ") + ret;
+  }
 
   // Test that the distance from a location to itself is negative radius, and that
   // the projection is the radius away from the origin.
