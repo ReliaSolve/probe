@@ -31,6 +31,24 @@ ContactResult closest_contact(Point dot, Point atom, double atom_radius)
   return ret;
 }
 
+double dot2srcCenter(const Point& dot, const Point& srcLoc, double srcVDWRad, const Point& targLoc) {
+  // The vector from the source pointing towards the target that is the radius of the source atom
+  Point src2targVec = (targLoc - srcLoc).normalize() * srcVDWRad;
+  // The point on the surface of the source atom that is closest to the target
+  Point srcSurfacePoint = src2targVec + srcLoc;
+  // The distance from the dot to the point on the source surface that is closest to the target
+  return (srcSurfacePoint - dot).length();
+}
+
+double kissEdge2bullsEye(double ra, double rb, double rp) {
+  return 2 * ra * sqrt(rb * rp / ((ra + rb) * (ra + rp)));
+}
+bool annularDots(const Point& dot, const Point& srcLoc, double srcVDWRad,
+  const Point& targLoc, double targVDWRad, double probeRadius) {
+  return dot2srcCenter(dot, srcLoc, srcVDWRad, targLoc) > kissEdge2bullsEye(srcVDWRad, targVDWRad, probeRadius);
+}
+
+
 int atom_charge(iotbx::pdb::hierarchy::atom const& atom)
 {
   // Get the tidy version of the charge string stripped of any extra characters.
@@ -92,17 +110,23 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     }
     ExtraAtomInfo const& aExtra = m_extraInfo[aID];
     double nonBondedDistance = sourceExtra.vdwRadius + aExtra.vdwRadius;
+    bool excluded = false;
+    for (iotbx::pdb::hierarchy::atom const& e : exclude) {
+      if (e.data.get() == a.data.get()) {
+        excluded = true;
+        break;
+      }
+    }
     if ((std::abs(a.data->occ) >= minOccupancy)
           && ((a.data->xyz - sourceAtom.data->xyz).length() <= nonBondedDistance + probeRadius)
-      @todo replace this find with a scan looking for common data pointer get() outputs due to no == being defined
-          && (std::find(exclude.begin(), exclude.end(), a) == exclude.end())
+          && (!excluded)
         ) {
       interacting.push_back(a);
     }
   }
 
   /// @todo Useful tidbits.  Remove when done.
-  bool h = sourceAtom.element_is_hydrogen();
+  // bool h = sourceAtom.element_is_hydrogen();
   /// @todo end useful tidbits
 
   // Run through all of the dots and determine whether and how to score each.
@@ -191,13 +215,58 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     if (!keepDot) { continue; }
 
     // We've gotten this far, so we score the dot and add it to the relevant subscore.
+    int overlapType = 0;
+    double overlap = 0;
 
-    /// @todo
+    // Determine the overlap type and amount of overlap.
+    if (minGap > 0) {
+      overlap = 0;
+      overlapType = 0;
+    } else if (isHydrogenBond && tooCloseHydrogenBond) {
+      minGap += hydgrogenBondMinDist;
+      overlap = -0.5 * minGap;
+      overlapType = -1;
+    } else if (isHydrogenBond) {
+      overlap = -0.5 * minGap;
+      overlapType = 1;
+    } else if (minGap < 0) {
+      overlap = -0.5 * minGap;
+      overlapType = -1;
+    }
 
+    // Compute the score for the dot based on the overlap type and amount of overlap.
+    // Assign it to the appropriate subscore.
+    double dotScore = 0;
+    switch (overlapType) {
 
-    /// @todo Make sure that we add to the attraction subscore in the overlapType == 0 case
+    case -1:  // Clash
+      ret.bumpSubScore += -m_bumpWeight * overlap;
+      break;
+
+    case 0:   // Contact dot
+      if ((!onlyBumps) && !annularDots(q, sourceAtom.data->xyz, sourceExtra.vdwRadius,
+          cause->data->xyz, m_extraInfo[cause->data->i_seq].vdwRadius, probeRadius)) {
+
+        double scaledGap = minGap / m_gapWeight;
+        ret.attractSubScore += exp(-scaledGap * scaledGap);
+      }
+      break;
+
+    case 1:   // Hydrogen bond
+      if (!onlyBumps) {
+        ret.hBondSubScore += m_hBondWeight * overlap;
+      } else {  // In this case, we treat it as a bump
+        ret.bumpSubScore += -m_bumpWeight * overlap;
+      }
+      
+    default:
+      // This should never happen.  Returns with ret invalid to indicate an error.
+      return ret;
+    }
   }
 
+  // Normalize the score by the density so that it does not depend on the number of dots
+  // that were constructed for the atom.
   ret.bumpSubScore /= density;
   ret.hBondSubScore /= density;
   ret.attractSubScore /= density;
@@ -211,6 +280,11 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
 /// @brief Returns true of the two floating-point numbers are nearly equal
 static bool closeTo(double a, double b) {
   return fabs(a - b) < 1e-10;
+}
+
+std::string AtomVsAtomDotScorer::test()
+{
+
 }
 
 std::string Scoring_test()
@@ -246,7 +320,6 @@ std::string Scoring_test()
           double rad = 0.5;
           res = closest_contact(test, ones, rad);
           if (!closeTo(rad, (res.closest_contact - ones).length())) {
-            std::cout << "XXX at " << res.closest_contact[0] << ", " << res.closest_contact[1] << ", " << res.closest_contact[2] << std::endl;
             return "Scoring_test: closest_contact() returned bad closest contact for surrounding point";
           }
         }

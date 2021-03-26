@@ -33,6 +33,24 @@ namespace molprobity {
     /// return Integer representing the charge: -2, -1, 0, 1, 2
     int atom_charge(iotbx::pdb::hierarchy::atom const& atom);
 
+    // functions used to restrict annular rings of good dots around clashes
+
+    /// @brief The distance from a dot to the point on the source surface that is closest to the target
+    /// @param [in] dot The dot being considered
+    /// @param [in] srcLoc The center of the source atom
+    /// @param [in] srcVDWRad The van Der Waals radius of the source atom in Angstroms
+    /// @param [in] targLoc The center of the target atom
+    /// @return The distance from a dot to the point on the source surface that is closest to the target
+    double dot2srcCenter(const Point& dot, const Point& srcLoc, double srcVDWRad, const Point& targLoc);
+
+    /// @brief @todo Figure out what this is computing.
+    double kissEdge2bullsEye(double ra, double rb, double rp);
+
+    /// @brief @todo Figure out what this is computing.
+    bool annularDots(const Point& dot, const Point& srcLoc, double srcVDWRad,
+      const Point& targLoc, double targVDWRad, double probeRadius);
+
+
     //=====================================================================================================
     /// @brief Class to hold data values for an atom beyond those present in the hierarchy::atom class itself
     // that are needed by the Probe calculations.
@@ -40,9 +58,10 @@ namespace molprobity {
     class ExtraAtomInfo {
     public:
       double  vdwRadius = 0;            ///< van Der Waals radius of the atom
-      char    hydrogenBondType = ' ';   ///< Type of hydrogen bond for this atom
 
       /// @todo We'll need to fill these in from somewhere to match the things that Reduce filled in from ElementInfo.cpp.
+      /// Alternatively, figure out how to compute some of them by looking at the hierarchy surrounding the atom from
+      /// within the functions themselves so we don't need to pass them.
       bool    isAcceptor = false;       ///< Does this accept hydrogen bonds (aromatic carbon, nitrogen acceptor,
                                         ///  oxygen, sulfur, fluorine, chlorine, bromine, or iodine?
       bool    isDonor = false;          ///< Is this a donor hydrogen (from polar, aromatic polar, or water)?
@@ -62,7 +81,6 @@ namespace molprobity {
       ///         passed as parameters are used to look up directly in this vector so they must not
       ///         have changed (due to structure modification) since the extaInfo vector or the
       ///         SpatialQuery structure were generated.
-      /// @param [in] params Non-bonded parameters computed by the Geometry Restraints Manager.
       /// @param [in] gapWeight Factor to apply to gap between atoms
       /// @param [in] bumpWeight Factor to apply when atoms are in bumping overlap
       /// @param [in] hBondWeight Factor to apply to hydrogen-bond overlaps
@@ -73,13 +91,12 @@ namespace molprobity {
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the
       ///             atoms are both charged.
       AtomVsAtomDotScorer(std::vector<ExtraAtomInfo> extraInfo
-        , cctbx::geometry_restraints::nonbonded_params const& params
         , double gapWeight = 0.25
         , double bumpWeight = 10.0
         , double hBondWeight = 4.0
         , double minRegularHydrogenBondGap = 0.6
         , double minChargedHydrogenBondGap = 0.8
-      ) : m_params(params), m_gapWeight(gapWeight), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
+      ) : m_gapWeight(gapWeight), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
         , m_minRegularHydrogenBondGap(minRegularHydrogenBondGap)
         , m_minChargedHydrogenBondGap(minChargedHydrogenBondGap) {};
 
@@ -119,7 +136,6 @@ namespace molprobity {
     protected:
       /// Parameters stored from constructor.
       std::vector<ExtraAtomInfo> m_extraInfo;
-      cctbx::geometry_restraints::nonbonded_params const& m_params;
       double m_gapWeight;
       double m_bumpWeight;
       double m_hBondWeight;
