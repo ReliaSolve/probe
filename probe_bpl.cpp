@@ -3,6 +3,8 @@
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include "DotSpheres.h"
+#include "SpatialQuery.h"
+#include "Scoring.h"
 
 using namespace boost::python;
 using namespace molprobity::probe;
@@ -28,11 +30,36 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .add_property("elems", wrap_vec3_array)
   ;
 
-  // Describe vectors we need access to
+  class_<ContactResult>("ContactResult", init<>())
+    .add_property("closestContact", &ContactResult::closestContact)
+    .add_property("distAboveSurface", &ContactResult::distAboveSurface)
+    ;
+
+  class_<ExtraAtomInfo>("ExtraAtomInfo", init<>())
+    .add_property("vdwRadius", &ExtraAtomInfo::vdwRadius)
+    .add_property("isAcceptor", &ExtraAtomInfo::isAcceptor)
+    .add_property("isDonor", &ExtraAtomInfo::isDonor)
+    .add_property("isDummyHydrogen", &ExtraAtomInfo::isDummyHydrogen)
+    ;
+
+  class_<AtomVsAtomDotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
+    .add_property("valid", &AtomVsAtomDotScorer::ScoreDotsResult::valid)
+    .add_property("bumpSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::bumpSubScore)
+    .add_property("hBondSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::hBondSubScore)
+    .add_property("attractSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::attractSubScore)
+    .add_property("hasBadBump", &AtomVsAtomDotScorer::ScoreDotsResult::hasBadBump)
+    .def("totalScore", &AtomVsAtomDotScorer::ScoreDotsResult::totalScore)
+    ;
+
+  // Export the vector indexing of objects that we'll use vectors for.
   typedef std::vector<Point> PointList;
   class_<PointList>("PointList")
     .def(vector_indexing_suite<PointList>())
   ;
+  typedef std::vector<ExtraAtomInfo> ExtraAtomInfoList;
+  class_<ExtraAtomInfoList>("ExtraAtomInfoList")
+    .def(vector_indexing_suite<ExtraAtomInfoList>())
+    ;
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
@@ -49,9 +76,30 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("test", &DotSphereCache::test)
   ;
 
-  // Export the vector indexing of objects that we'll use vectors for.
+  class_<SpatialQuery>("SpatialQuery", init<Point, Point, Point>())
+    .def(init<iotbx::pdb::hierarchy::model>())
+    .def("add", &SpatialQuery::add)
+    .def("remove", &SpatialQuery::remove)
+    .def("neighbors", &SpatialQuery::neighbors)
+    .def("test", &SpatialQuery::test)
+  ;
+
+  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<ExtraAtomInfoList,
+        optional<double, double, double, double, double, double> >())
+    .def("score_dots", &AtomVsAtomDotScorer::score_dots)
+    .def("test", &AtomVsAtomDotScorer::test)
+    ;
 
   // Export the global functions
+  def("closest_contact", closest_contact, "Point of closest contact and distance for dot on atom.");
+  def("atom_charge", atom_charge, "Integer charge on an atom given its string charge description.");
+  def("dot2srcCenter", dot2srcCenter, "Distance from dot to point on the source surface closest to target.");
+  def("kissEdge2bullsEye", kissEdge2bullsEye, ".");
+  def("annularDots", annularDots, ".");
+
   def("DotSpheres_test", DotSpheres_test, "Test all classes defined in DotSpheres.h.");
+  def("SpatialQuery_test", SpatialQuery_test, "Test all classes defined in SpatialQuery.h.");
+  def("Scoring_test", Scoring_test, "Test all classes defined in Scoring.h.");
+
 }
 

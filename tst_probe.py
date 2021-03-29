@@ -16,7 +16,16 @@ def RunProbeTests():
   print('First dot is at',dots[0].elems[0],dots[0].elems[1],dots[0].elems[2])
 
   print('Testing DotSphere objects')
-  return probe.DotSpheres_test()
+  ret = probe.DotSpheres_test()
+  if len(ret) > 0:
+    return ret
+
+  print('Testing SpatialQuery objects')
+  ret = probe.SpatialQuery_test()
+  if len(ret) > 0:
+    return ret
+
+  return ret
 
 if __name__ == '__main__':
 

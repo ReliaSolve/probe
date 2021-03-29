@@ -14,10 +14,11 @@ namespace molprobity {
     // Helper functions outside the class.
 
     /// @brief Structure to hold the results from a call to closest_contact()
-    typedef struct ContactResult_ {
-      Point   closest_contact;      ///< The point on the radius of the tested sphere closest to the dot
-      double  dist_above_surface;   ///< Distance that the dot is above the tested sphere (negative for inside)
-    } ContactResult;
+    class ContactResult {
+    public:
+      Point   closestContact;      ///< The point on the radius of the tested sphere closest to the dot
+      double  distAboveSurface;   ///< Distance that the dot is above the tested sphere (negative for inside)
+    };
 
     /// @brief Find the point of closest contact and distance above/below atomic surface
     /// @param [in] dot The dot whose location is to be projected onto the atom
@@ -67,6 +68,12 @@ namespace molprobity {
       bool    isDonor = false;          ///< Is this a donor hydrogen (from polar, aromatic polar, or water)?
       bool    isDummyHydrogen = false;  ///< These are inserted on Oxygens that are waters to provide
                                         ///  bonds that can go in any direction.
+
+      /// @brief == operator is required so that we can wrap the standard vector operators in Boost::Python
+      bool operator ==(ExtraAtomInfo const& o) {
+        return ((vdwRadius == o.vdwRadius) && (isAcceptor == o.isAcceptor) && (isDonor == o.isDonor)
+          && (isDummyHydrogen == o.isDummyHydrogen));
+      }
     };
 
     //=====================================================================================================
@@ -98,13 +105,15 @@ namespace molprobity {
         , double minRegularHydrogenBondGap = 0.6
         , double minChargedHydrogenBondGap = 0.8
         , double badBumpBondGap = 0.4
-      ) : m_gapWeight(gapWeight), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
+      ) : m_extraInfo(extraInfo)
+        , m_gapWeight(gapWeight), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
         , m_minRegularHydrogenBondGap(minRegularHydrogenBondGap)
         , m_minChargedHydrogenBondGap(minChargedHydrogenBondGap)
         , m_badBumpBondGap(badBumpBondGap) {};
 
       /// @brief Structure to hold the results from a call to score_dots()
-      typedef struct ScoreDotsResult_ {
+      class ScoreDotsResult {
+      public:
         bool    valid = false;          ///< False if this information has not yet been computed.
         double  bumpSubScore = 0;       ///< Portion of the score due to bumps
         double  hBondSubScore = 0;      ///< Portion of the score due to hydrogen bonds
@@ -112,7 +121,7 @@ namespace molprobity {
         bool    hasBadBump = false;     ///< Did this atom have a bad bump for any of its dots?
         /// @brief Sum of all of the sub-scores, the total score
         double  totalScore() const { return bumpSubScore + hBondSubScore + attractSubScore; }
-      } ScoreDotsResult;
+      };
 
       /// @brief Determine the bump and hydrogen-bond subscores for a vector of dots on an atom
       /// @param [in] sourceAtom Atom that the dots are surrounding.

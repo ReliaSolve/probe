@@ -18,15 +18,15 @@ ContactResult closest_contact(Point dot, Point atom, double atom_radius)
   // if the dot is at the center of the atom, then pick an arbitrary point
   // on the surface and return it.
   if (diff.length_sq() == 0) {
-    ret.dist_above_surface = -atom_radius;
-    ret.closest_contact = atom + Point(atom_radius, 0, 0);
+    ret.distAboveSurface = -atom_radius;
+    ret.closestContact = atom + Point(atom_radius, 0, 0);
 
   // Otherwise, find the point of closest approach and its distance and return
   // them.
   } else {
     double len = diff.length();
-    ret.dist_above_surface = len - atom_radius;
-    ret.closest_contact = atom + diff * atom_radius / len;
+    ret.distAboveSurface = len - atom_radius;
+    ret.closestContact = atom + diff * atom_radius / len;
   }
   return ret;
 }
@@ -342,10 +342,10 @@ std::string Scoring_test()
   // the projection is the radius away from the origin.
   Point ones(1, 1, 1);
   res = closest_contact(ones, ones, 1);
-  if (!closeTo(res.dist_above_surface, -1)) {
+  if (!closeTo(res.distAboveSurface, -1)) {
     return "Scoring_test: closest_contact() returned bad distance for same point";
   }
-  if (!closeTo((ones - res.closest_contact).length(), 1)) {
+  if (!closeTo((ones - res.closestContact).length(), 1)) {
     return "Scoring_test: closest_contact() returned bad closest contact for same point";
   }
 
@@ -359,7 +359,7 @@ std::string Scoring_test()
           test += ones;
           double rad = 0.5;
           res = closest_contact(test, ones, rad);
-          if (!closeTo(rad, (res.closest_contact - ones).length())) {
+          if (!closeTo(rad, (res.closestContact - ones).length())) {
             return "Scoring_test: closest_contact() returned bad closest contact for surrounding point";
           }
         }
@@ -373,7 +373,7 @@ std::string Scoring_test()
     test += ones;
     double rad = 25;
     res = closest_contact(test, ones, rad);
-    if (!closeTo(x - rad, res.dist_above_surface)) {
+    if (!closeTo(x - rad, res.distAboveSurface)) {
       return "Scoring_test: closest_contact() returned bad distance for point";
     }
   }
