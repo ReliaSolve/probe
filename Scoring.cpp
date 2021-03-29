@@ -241,6 +241,10 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
 
     case -1:  // Clash
       ret.bumpSubScore += -m_bumpWeight * overlap;
+      // See if we should flag this atom as having a bad bump
+      if (minGap < -m_badBumpBondGap) {
+        ret.hasBadBump = true;
+      }
       break;
 
     case 0:   // Contact dot
@@ -282,9 +286,45 @@ static bool closeTo(double a, double b) {
   return fabs(a - b) < 1e-10;
 }
 
+/// @brief holds parameters needed to initialize an atom and its associated extra information.
+static class AtomInfo {
+public:
+  Point loc;
+  double occ;
+  std::string charge;
+  double radius;
+  bool isAcceptor;
+  bool isDonor;
+  bool isDummyHydrogen;
+};
+static std::vector<AtomInfo> testAtoms = {
+  { {0,0,0}, 1, "", 1.0, false, true, false}      // Uncharged hydrogen at the origin
+};
+
 std::string AtomVsAtomDotScorer::test()
 {
+  // Construct a model with some atoms in it so that we can use it for our tests.
+  // Construct atoms with locations and extra info pulled from the data table above
+  iotbx::pdb::hierarchy::model m;
+  iotbx::pdb::hierarchy::chain c;
+  iotbx::pdb::hierarchy::residue_group rg;
+  iotbx::pdb::hierarchy::atom_group ag;
+  size_t numAtoms = 10;
+  Coord spacing = 5;
+  for (int x = 0; x < numAtoms; x++) {
+    for (int y = 0; y < numAtoms; y++) {
+      for (int z = 0; z < numAtoms; z++) {
+        Point v(x * spacing, y * spacing, z * spacing);
+        iotbx::pdb::hierarchy::atom a(v, v);
+        ag.append_atom(a);
+      }
+    }
+  }
+  rg.append_atom_group(ag);
+  c.append_residue_group(rg);
+  m.append_chain(c);
 
+  /// @todo
 }
 
 std::string Scoring_test()
