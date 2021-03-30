@@ -19,11 +19,11 @@ env.StaticLibrary(
 if (not env_etc.no_boost_python):
   Import("env_cctbx_boost_python_ext")
   env_bpl = env_cctbx_boost_python_ext.Clone()
-  env_bpl.Append(
-    SHCXXFLAGS=[
-      "-std=c++11"])
   if (env_etc.compiler != "win32_cl"):
-    env.Append(SHCXXFLAGS=[
+    env_bpl.Append(
+      SHCXXFLAGS=[
+        "-std=c++11"])
+    env_bpl.Append(SHCXXFLAGS=[
       "-std=c++11"]
     )
   env_bpl.Append(LIBPATH=["#probe/lib"])
