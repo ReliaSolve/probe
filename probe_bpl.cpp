@@ -25,12 +25,13 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
   // Describe and name compound classes that we need access to.
 
-  // This class is already exposed as its more basic vec3<double> class.
-  //class_<Point>("Point", init<double, double, double>())
-  //  .def(init<>())
-  //  .def("size", &Point::size)
-  //  .add_property("elems", wrap_vec3_array)
-  //;
+  // This class is already exposed as its more basic vec3<double> class, but if we
+  // don't include this we get an error saying that no class is registered...
+  class_<Point>("Point", init<double, double, double>())
+    .def(init<>())
+    .def("size", &Point::size)
+    .add_property("elems", wrap_vec3_array)
+  ;
 
   class_<ContactResult>("ContactResult", init<>())
     .add_property("closestContact", &ContactResult::closestContact)

@@ -287,7 +287,7 @@ static bool closeTo(double a, double b) {
 }
 
 /// @brief holds parameters needed to initialize an atom and its associated extra information.
-static class AtomInfo {
+class AtomInfo {
 public:
   Point loc;
   double occ;
@@ -323,6 +323,9 @@ std::string AtomVsAtomDotScorer::test()
   rg.append_atom_group(ag);
   c.append_residue_group(rg);
   m.append_chain(c);
+
+  // Sweep various atom types from far away to near and make sure their interaction
+  // curves match what is expected.
 
   /// @todo
   return "";
