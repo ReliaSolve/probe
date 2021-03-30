@@ -9,12 +9,12 @@ if (env_etc.compiler != "win32_cl"):
   env.Append(CXXFLAGS=[
     "-std=c++11"]
   )
-env.StaticLibrary(
-  target=["#probe/lib/probelib"],
-  source=[
-    "Scoring.cpp",
-    "DotSpheres.cpp",
-    "SpatialQuery.cpp"])
+#env.StaticLibrary(
+#  target=["#probe/lib/probelib"],
+#  source=[
+#    "Scoring.cpp",
+#    "DotSpheres.cpp",
+#    "SpatialQuery.cpp"])
 
 if (not env_etc.no_boost_python):
   Import("env_cctbx_boost_python_ext")
@@ -26,8 +26,18 @@ if (not env_etc.no_boost_python):
     env_bpl.Append(SHCXXFLAGS=[
       "-std=c++11"]
     )
+
+  # We need Boost Python to compile this C++ library because Scoring.cpp uses it.
+  env_bpl.StaticLibrary(
+    target=["#probe/lib/probelib"],
+    source=[
+      "Scoring.cpp",
+      "DotSpheres.cpp",
+      "SpatialQuery.cpp"])
+
   env_bpl.Append(LIBPATH=["#probe/lib"])
   env_bpl.Prepend(LIBS=["probelib"])
+
   env_bpl.SharedLibrary(
     target="#lib/mmtbx_probe_ext",
     source=["probe_bpl.cpp"
