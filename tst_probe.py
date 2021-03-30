@@ -59,4 +59,5 @@ if __name__ == '__main__':
   ret = RunProbeTests()
   if len(ret) == 0:
     print('Success!')
-  sys.exit(ret)
+
+  assert (len(ret) == 0)
