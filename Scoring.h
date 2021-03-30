@@ -58,22 +58,32 @@ namespace molprobity {
 
     class ExtraAtomInfo {
     public:
-      double  vdwRadius = 0;            ///< van Der Waals radius of the atom
+      /// @brief Get and set methods
+      double  getVdwRadius() const { return m_vdwRadius; }
+      void setVdwRadius(double val) { m_vdwRadius = val; }
 
-      /// @todo We'll need to fill these in from somewhere to match the things that Reduce filled in from ElementInfo.cpp.
-      /// Alternatively, figure out how to compute some of them by looking at the hierarchy surrounding the atom from
-      /// within the functions themselves so we don't need to pass them.
-      bool    isAcceptor = false;       ///< Does this accept hydrogen bonds (aromatic carbon, nitrogen acceptor,
-                                        ///  oxygen, sulfur, fluorine, chlorine, bromine, or iodine?
-      bool    isDonor = false;          ///< Is this a donor hydrogen (from polar, aromatic polar, or water)?
-      bool    isDummyHydrogen = false;  ///< These are inserted on Oxygens that are waters to provide
-                                        ///  bonds that can go in any direction.
+      bool getIsAcceptor() const { return m_isAcceptor; }
+      void setIsAcceptor(bool val) { m_isAcceptor = val; }
+      bool getIsDonor() const { return m_isDonor; }
+      void setIsDonor(bool val) { m_isDonor = val; }
+      bool getIsDummyHydrogen() const { return m_isDummyHydrogen; }
+      void setIsDummyHydrogen(bool val) { m_isDummyHydrogen = val; }
 
       /// @brief == operator is required so that we can wrap the standard vector operators in Boost::Python
       bool operator ==(ExtraAtomInfo const& o) {
-        return ((vdwRadius == o.vdwRadius) && (isAcceptor == o.isAcceptor) && (isDonor == o.isDonor)
-          && (isDummyHydrogen == o.isDummyHydrogen));
+        return ((getVdwRadius() == o.getVdwRadius())
+          && (getIsAcceptor() == o.getIsAcceptor())
+          && (getIsDonor() == o.getIsDonor())
+          && (getIsDummyHydrogen() == o.getIsDummyHydrogen()));
       }
+
+    protected:
+      double m_vdwRadius = 0;          ///< van Der Waals radius of the atom
+      bool m_isAcceptor = false;       ///< Does this accept hydrogen bonds (aromatic carbon, nitrogen acceptor,
+                                       ///  oxygen, sulfur, fluorine, chlorine, bromine, or iodine?
+      bool m_isDonor = false;          ///< Is this a donor hydrogen (from polar, aromatic polar, or water)?
+      bool m_isDummyHydrogen = false;  ///< These are inserted on Oxygens that are waters to provide
+                                       ///  bonds that can go in any direction.
     };
 
     //=====================================================================================================

@@ -109,7 +109,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
       return ret;
     }
     ExtraAtomInfo const& aExtra = m_extraInfo[aID];
-    double nonBondedDistance = sourceExtra.vdwRadius + aExtra.vdwRadius;
+    double nonBondedDistance = sourceExtra.getVdwRadius() + aExtra.getVdwRadius();
     bool excluded = false;
     for (iotbx::pdb::hierarchy::atom const& e : exclude) {
       if (e.data.get() == a.data.get()) {
@@ -150,7 +150,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     for (iotbx::pdb::hierarchy::atom const& b : interacting) {
       ExtraAtomInfo const& bExtra = m_extraInfo[b.data->i_seq];
       Point locb = b.data->xyz;
-      double vdwb = bExtra.vdwRadius;
+      double vdwb = bExtra.getVdwRadius();
 
       // See if we are too far away to interact, bail if so.
       double squareDist = (probLoc - locb).length_sq();
@@ -178,15 +178,15 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
           bool chargeComplement = bothCharged && (chargeSource * chargeB < 0);
 
           // See if one of the atoms is a hydrogen donor and the other can accept hydrogen bonds.
-          bool couldHBond = (sourceExtra.isDonor && bExtra.isAcceptor)
-            || (sourceExtra.isAcceptor && bExtra.isDonor);
+          bool couldHBond = (sourceExtra.getIsDonor() && bExtra.getIsAcceptor())
+            || (sourceExtra.getIsAcceptor() && bExtra.getIsDonor());
           if (couldHBond && ((!bothCharged) || chargeComplement)) {
             isHydrogenBond = true;
             hydgrogenBondMinDist = bothCharged ? m_minChargedHydrogenBondGap : m_minRegularHydrogenBondGap;
             tooCloseHydrogenBond = (gap < -hydgrogenBondMinDist);
           } else {
             // If this is a dummy hydrogen, then we skip it, it can only be a hydrogen-bond partner
-            if (bExtra.isDummyHydrogen) { continue; }
+            if (bExtra.getIsDummyHydrogen()) { continue; }
             // This is not a hydrogen bond.
             isHydrogenBond = tooCloseHydrogenBond = false;
           }
@@ -205,7 +205,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     if (keepDot) {
       /// @todo Check to make sure they are in interacting alternate conformations.
       for (iotbx::pdb::hierarchy::atom const& e : exclude) {
-        double vdwe = m_extraInfo[e.data->i_seq].vdwRadius;
+        double vdwe = m_extraInfo[e.data->i_seq].getVdwRadius();
         if ((q - e.data->xyz).length_sq() < vdwe * vdwe) {
           keepDot = false;
           break;
@@ -248,8 +248,8 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
       break;
 
     case 0:   // Contact dot
-      if ((!onlyBumps) && !annularDots(q, sourceAtom.data->xyz, sourceExtra.vdwRadius,
-          cause->data->xyz, m_extraInfo[cause->data->i_seq].vdwRadius, probeRadius)) {
+      if ((!onlyBumps) && !annularDots(q, sourceAtom.data->xyz, sourceExtra.getVdwRadius(),
+          cause->data->xyz, m_extraInfo[cause->data->i_seq].getVdwRadius(), probeRadius)) {
 
         double scaledGap = minGap / m_gapWeight;
         ret.attractSubScore += exp(-scaledGap * scaledGap);
@@ -325,6 +325,7 @@ std::string AtomVsAtomDotScorer::test()
   m.append_chain(c);
 
   /// @todo
+  return "";
 }
 
 std::string Scoring_test()

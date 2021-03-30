@@ -24,11 +24,13 @@ boost::python::tuple wrap_vec3_array(Point const& d) {
 BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
   // Describe and name compound classes that we need access to.
-  class_<Point>("Point", init<double, double, double>())
-    .def(init<>())
-    .def("size", &Point::size)
-    .add_property("elems", wrap_vec3_array)
-  ;
+
+  // This class is already exposed as its more basic vec3<double> class.
+  //class_<Point>("Point", init<double, double, double>())
+  //  .def(init<>())
+  //  .def("size", &Point::size)
+  //  .add_property("elems", wrap_vec3_array)
+  //;
 
   class_<ContactResult>("ContactResult", init<>())
     .add_property("closestContact", &ContactResult::closestContact)
@@ -36,12 +38,13 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     ;
 
   class_<ExtraAtomInfo>("ExtraAtomInfo", init<>())
-    .add_property("vdwRadius", &ExtraAtomInfo::vdwRadius)
-    .add_property("isAcceptor", &ExtraAtomInfo::isAcceptor)
-    .add_property("isDonor", &ExtraAtomInfo::isDonor)
-    .add_property("isDummyHydrogen", &ExtraAtomInfo::isDummyHydrogen)
+    .add_property("vdwRadius", &ExtraAtomInfo::getVdwRadius, &ExtraAtomInfo::setVdwRadius)
+    .add_property("isAcceptor", &ExtraAtomInfo::getIsAcceptor, &ExtraAtomInfo::setIsAcceptor)
+    .add_property("isDonor", &ExtraAtomInfo::getIsDonor, &ExtraAtomInfo::setIsDonor)
+    .add_property("isDummyHydrogen", &ExtraAtomInfo::getIsDummyHydrogen, &ExtraAtomInfo::setIsDummyHydrogen)
     ;
 
+  // These are read-only methods.  They cannot be filled in by Python.
   class_<AtomVsAtomDotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
     .add_property("valid", &AtomVsAtomDotScorer::ScoreDotsResult::valid)
     .add_property("bumpSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::bumpSubScore)
