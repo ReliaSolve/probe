@@ -31,18 +31,15 @@ def RunProbeTests():
 
   print('Testing DotSphere objects')
   ret = probe.DotSpheres_test()
-  if len(ret) > 0:
-    return ret
+  assert (len(ret) == 0)
 
   print('Testing SpatialQuery objects')
   ret = probe.SpatialQuery_test()
-  if len(ret) > 0:
-    return ret
+  assert (len(ret) == 0)
 
   print('Testing Scoring objects')
   ret = probe.Scoring_test()
-  if len(ret) > 0:
-    return ret
+  assert (len(ret) == 0)
 
   return ret
 
