@@ -36,7 +36,7 @@ if (not env_etc.no_boost_python):
       "SpatialQuery.cpp"])
 
   env_bpl.Append(LIBPATH=["#probe/lib"])
-  env_bpl.Prepend(LIBS=["probelib"])
+  env_bpl.Prepend(LIBS=["iotbx_pdb", "cctbx", "scitbx_boost_python", "probelib"])
 
   env_bpl.SharedLibrary(
     target="#lib/mmtbx_probe_ext",
