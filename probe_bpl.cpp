@@ -56,20 +56,9 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     ;
 
   // Export the vector indexing of objects that we'll use vectors for.
-  typedef std::vector<Point> PointList;
-  class_<PointList>("PointList")
-    .def(vector_indexing_suite<PointList>())
-  ;
-  typedef std::vector<ExtraAtomInfo> ExtraAtomInfoList;
-  class_<ExtraAtomInfoList>("ExtraAtomInfoList")
-    .def(vector_indexing_suite<ExtraAtomInfoList>())
-    ;
-  /// @todo We should not have to wrap this explicitly, because it will show
-  /// up as a flex array type in Python?
-  //typedef scitbx::af::shared<iotbx::pdb::hierarchy::atom> AtomList;
-  //class_<AtomList>("AtomList")
-  //  .def(vector_indexing_suite<AtomList>())
-  //  ;
+  // NOTE: Everything that is using scitbx::af::shared "flex" arrays is
+  // automatically wrapped for us in ways that let them be used as standard
+  // Python iterators.
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
@@ -94,7 +83,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("test", &SpatialQuery::test)
   ;
 
-  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<ExtraAtomInfoList,
+  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<scitbx::af::shared<ExtraAtomInfo>,
         optional<double, double, double, double, double, double> >())
     .def("score_dots", &AtomVsAtomDotScorer::score_dots)
     .def("test", &AtomVsAtomDotScorer::test)

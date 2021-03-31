@@ -104,7 +104,7 @@ std::string DotSphere::test()
   {
     DotSphere d(1, 5);
     bool px = false, mx = false, py = false, my = false, pz = false, mz = false;
-    const std::vector<Point>& dots = d.dots();
+    const scitbx::af::shared<Point>& dots = d.dots();
     for (size_t i = 0; i < dots.size(); i++) {
       Point dot = dots[i];
       if (dot[0] > 0) { px = true; }

@@ -26,7 +26,7 @@ namespace molprobity {
       DotSphere(double radius, double density);
 
       /// @brief Returns the vector of dots on the sphere
-      const std::vector<Point>& dots() const { return m_vec; }
+      const scitbx::af::shared<Point>& dots() const { return m_vec; }
 
       /// @brief Accessor method for the radius used to construct the sphere.
       double radius() const { return m_rad; }
@@ -56,7 +56,7 @@ namespace molprobity {
     protected:
       double  m_rad;            ///< Radius of the sphere in Angstroms
       double  m_dens;           ///< Dot density
-      std::vector<Point> m_vec;   ///< Stores the vector of dots
+      scitbx::af::shared<Point> m_vec;   ///< Stores the vector of dots
     };
 
     /// @brief Constructs new DotSphere objects as needed, reusing existing ones when it can.

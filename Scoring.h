@@ -108,7 +108,7 @@ namespace molprobity {
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the
       ///             atoms are both charged.
       /// @param [in] badBumpBondGap Dots that are closer than this will cause bad bump to be flagged.
-      AtomVsAtomDotScorer(std::vector<ExtraAtomInfo> extraInfo
+      AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
         , double gapWeight = 0.25
         , double bumpWeight = 10.0
         , double hBondWeight = 4.0
@@ -146,8 +146,8 @@ namespace molprobity {
       /// @return Normalized sum of scores, also broken down by hydrogen bond vs. bump scores.
       ScoreDotsResult score_dots(iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,
         SpatialQuery spatialQuery, double nearbyRadius, double probeRadius,
-        std::vector<iotbx::pdb::hierarchy::atom> exclude,
-        std::vector<Point> dots, double density, bool onlyBumps = false);
+        scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude,
+        scitbx::af::shared<Point> dots, double density, bool onlyBumps = false);
 
       //===========================================================================
       // Seldom-used methods below here.
@@ -158,7 +158,7 @@ namespace molprobity {
 
     protected:
       /// Parameters stored from constructor.
-      std::vector<ExtraAtomInfo> m_extraInfo;
+      scitbx::af::shared<ExtraAtomInfo> m_extraInfo;
       double m_gapWeight;
       double m_bumpWeight;
       double m_hBondWeight;

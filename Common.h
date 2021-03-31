@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <scitbx/vec3.h>
+#include <scitbx/array_family/shared.h>
 
 namespace molprobity {
   namespace probe {

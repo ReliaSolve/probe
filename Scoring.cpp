@@ -71,8 +71,8 @@ int atom_charge(iotbx::pdb::hierarchy::atom const& atom)
 AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,
   SpatialQuery spatialQuery, double nearbyRadius, double probeRadius,
-  std::vector<iotbx::pdb::hierarchy::atom> exclude,
-  std::vector<Point> dots, double density, bool onlyBumps)
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude,
+  scitbx::af::shared<Point> dots, double density, bool onlyBumps)
 {
   // This method is based on AtomPositions::atomScore() from Reduce.
   // It is passed only the dots that it should score rather than excluding them
@@ -101,7 +101,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   // gap between the Van Der Waals surfaces is less than the probe radius, and which
   // are not in the excluded list.
   /// @todo Check the conformation to make sure they are both visible to each other.
-  std::vector<iotbx::pdb::hierarchy::atom> interacting;
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> interacting;
   unsigned sourceID = sourceAtom.data->i_seq;
   ExtraAtomInfo const& sourceExtra = m_extraInfo[sourceID];
   for (iotbx::pdb::hierarchy::atom const &a : neighbors) {
