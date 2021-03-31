@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <vector>
+//#include <vector>
 #include <array>
 #include <set>
 #include <algorithm>
@@ -40,7 +40,7 @@ namespace molprobity {
       ///             conformation of a hierarchy, although it is of course possible to
       ///             use the parent() methods to chase up the hierarchy and verify that
       ///             the atom is in a specific group.
-      SpatialQuery(std::vector<iotbx::pdb::hierarchy::atom> const atoms);
+      SpatialQuery(scitbx::af::shared<iotbx::pdb::hierarchy::atom> const atoms);
 
       /// @brief Add an atom to the query object
       /// @param [in] a Atom to be added to the query object.
@@ -65,7 +65,8 @@ namespace molprobity {
       /// @param [in] max_distance Maximum distance from the point to the atom.  Specifies the
       ///     furthest an atom can be and be considered a neighbor.
       /// @return Vector of atoms that are within the specified distance from the Point.
-      std::vector<iotbx::pdb::hierarchy::atom> neighbors(Point const& p, double min_distance, double max_distance);
+      scitbx::af::shared<iotbx::pdb::hierarchy::atom> neighbors(
+        Point const& p, double min_distance, double max_distance);
 
       //===========================================================================
       // Seldom-used methods below here.
@@ -98,7 +99,7 @@ namespace molprobity {
       /// get a reference to the vector where a specified Point is located.  Use the
       /// grid_index() method to get an index to that vector in the grid.
       typedef std::set<iotbx::pdb::hierarchy::atom, atom_less> GridPoint;
-      std::vector<GridPoint> m_grid;
+      scitbx::af::shared<GridPoint> m_grid;
 
       /// @brief Return the index of the grid element that this point falls in.
       /// @param [in] p Point to find grid index for.  For points that lie outside

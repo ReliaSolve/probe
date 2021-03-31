@@ -60,6 +60,8 @@ def RunProbeTests():
             if hb_type == "D":
               extra[a.i_seq].isDonor = True
 
+  # Get a list of all the atoms in the chain
+
   # Construct the other objects needed for Scoring.
 
   # @todo

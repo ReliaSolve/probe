@@ -94,7 +94,8 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
 
   // Find the neighboring atoms that are potentially interacting.
   // The nonzero minimum distance prevents us from selecting the source atom.
-  std::vector<iotbx::pdb::hierarchy::atom> neighbors = spatialQuery.neighbors(sourceAtom.data->xyz, 0.001, nearbyRadius);
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> neighbors = 
+    spatialQuery.neighbors(sourceAtom.data->xyz, 0.001, nearbyRadius);
 
   // Select only those atoms actually interacting: that have sufficient occupancy, for whom the
   // gap between the Van Der Waals surfaces is less than the probe radius, and which

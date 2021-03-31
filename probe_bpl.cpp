@@ -15,7 +15,7 @@ using namespace molprobity::probe;
 /// constructor.
 boost::python::tuple wrap_vec3_array(Point const& d) {
   boost::python::list a;
-  for (int i = 0; i < d.size(); ++i) {
+  for (size_t i = 0; i < d.size(); ++i) {
     a.append(d.elems[i]);
   }
   return boost::python::tuple(a);
@@ -64,6 +64,12 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   class_<ExtraAtomInfoList>("ExtraAtomInfoList")
     .def(vector_indexing_suite<ExtraAtomInfoList>())
     ;
+  /// @todo We should not have to wrap this explicitly, because it will show
+  /// up as a flex array type in Python?
+  //typedef scitbx::af::shared<iotbx::pdb::hierarchy::atom> AtomList;
+  //class_<AtomList>("AtomList")
+  //  .def(vector_indexing_suite<AtomList>())
+  //  ;
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
@@ -81,7 +87,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   ;
 
   class_<SpatialQuery>("SpatialQuery", init<Point, Point, Point>())
-    .def(init<std::vector<iotbx::pdb::hierarchy::atom> const>())
+    .def(init<scitbx::af::shared<iotbx::pdb::hierarchy::atom> const>())
     .def("add", &SpatialQuery::add)
     .def("remove", &SpatialQuery::remove)
     .def("neighbors", &SpatialQuery::neighbors)

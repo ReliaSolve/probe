@@ -43,7 +43,7 @@ SpatialQuery::SpatialQuery(Point lowerBounds, Point upperBounds, Point binSize)
   initialize(lowerBounds, upperBounds, binSize);
 }
 
-SpatialQuery::SpatialQuery(std::vector<iotbx::pdb::hierarchy::atom> atoms)
+SpatialQuery::SpatialQuery(scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms)
 {
   // Compute the parameters needed and initialize the grid
   Point lowerBounds(1e10, 1e10, 1e10);
@@ -86,7 +86,7 @@ bool SpatialQuery::remove(iotbx::pdb::hierarchy::atom a)
   return m_grid[grid_index(a.data->xyz)].erase(a) == 1;
 }
 
-std::vector<iotbx::pdb::hierarchy::atom> SpatialQuery::neighbors(
+scitbx::af::shared<iotbx::pdb::hierarchy::atom> SpatialQuery::neighbors(
   Point const& p, double min_distance, double max_distance)
 {
   // Find the range of bins that are within the maximum distance of the point.
@@ -111,7 +111,7 @@ std::vector<iotbx::pdb::hierarchy::atom> SpatialQuery::neighbors(
   // against these to avoid having to do square roots.
   double min2 = min_distance * min_distance;
   double max2 = max_distance * max_distance;
-  std::vector<iotbx::pdb::hierarchy::atom> ret;
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> ret;
   for (size_t x = lowerIndex[0]; x <= upperIndex[0]; x++) {
     for (size_t y = lowerIndex[1]; y <= upperIndex[1]; y++) {
       for (size_t z = lowerIndex[2]; z <= upperIndex[2]; z++) {
@@ -218,19 +218,19 @@ std::string SpatialQuery::test()
     q.add(a);
     q.add(b);
 
-    std::vector<iotbx::pdb::hierarchy::atom> n1 = q.neighbors(lower, 0, 1);
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> n1 = q.neighbors(lower, 0, 1);
     if ((n1.size() != 1) || (lessThan(n1[0],a)) || (lessThan(a, n1[0]))) {
       return "molprobity::probe::SpatialQuery::test(): Did not find expected lower neighbor";
     }
 
-    std::vector<iotbx::pdb::hierarchy::atom> n2 = q.neighbors(upper, 0, 1);
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> n2 = q.neighbors(upper, 0, 1);
     if ((n2.size() != 1) || (lessThan(n2[0], b)) || (lessThan(b, n2[0]))) {
       return "molprobity::probe::SpatialQuery::test(): Did not find expected upper neighbor";
     }
 
     // Check for the case where we are right on top of them to be sure they are excluded if
     // our minimum distance is greater than 0.
-    std::vector<iotbx::pdb::hierarchy::atom> n3 = q.neighbors(lower, 0.1, 1);
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> n3 = q.neighbors(lower, 0.1, 1);
     if (n3.size() != 0) {
       return "molprobity::probe::SpatialQuery::test(): Found lower neighbor when not expected";
     }
@@ -239,7 +239,7 @@ std::string SpatialQuery::test()
   // Test the hierarchy-based constructor, which will be used for later tests as well.
   {
     // There is only one atom group/alternate conformation here, so we can just grab its atoms
-    SpatialQuery q(m.chains()[0].residue_groups()[0].atom_groups()[0].atoms());
+    SpatialQuery q(m.chains()[0].atoms());
     if (q.m_lowerBounds != Point(0, 0, 0)) {
       return "molprobity::probe::SpatialQuery::test(): Unexpected lower bound on model-based construction";
     }
@@ -255,7 +255,7 @@ std::string SpatialQuery::test()
       for (int y = -90; y <= 110; y += 100) {
         for (int z = -90; z <= 110; z += 100) {
           Point p(x, y, z);
-          std::vector<iotbx::pdb::hierarchy::atom> n = q.neighbors(p, 0, 2000);
+          scitbx::af::shared<iotbx::pdb::hierarchy::atom> n = q.neighbors(p, 0, 2000);
           if (n.size() != numAtoms * numAtoms * numAtoms) {
             return std::string("molprobity::probe::SpatialQuery::test(): Wrong number of neighbors in full-grid test at ")
               + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z)
@@ -269,7 +269,7 @@ std::string SpatialQuery::test()
     // requested spacing so we should get us and our three neighbors.
     {
       Point p(0, 0, 0);
-      std::vector<iotbx::pdb::hierarchy::atom> n = q.neighbors(p, 0, spacing+0.1);
+      scitbx::af::shared<iotbx::pdb::hierarchy::atom> n = q.neighbors(p, 0, spacing+0.1);
       if (n.size() != 4) {
         return "molprobity::probe::SpatialQuery::test(): Wrong number of neighbors in multi-element test";
       }
