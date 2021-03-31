@@ -69,6 +69,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("radius", &DotSphere::radius)
     .def("density", &DotSphere::density)
     .def("test", &DotSphere::test)
+    .def("XXX", &DotSphere::XXX)
   ;
 
   class_<DotSphereCache>("DotSphereCache", init<double>())
