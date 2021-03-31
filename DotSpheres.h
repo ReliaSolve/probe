@@ -23,11 +23,11 @@ namespace molprobity {
       ///         If this is zero or negative, the object will have no dots.
       ///         This specifies a desired density; the actual density may be slightly different.
       DotSphere(double radius, double density);
+      /// @todo Trying to see if this gets the shared<Point> defined...
+      DotSphere(scitbx::af::shared<Point> XXX) : m_rad(0), m_dens(0) {  }
 
       /// @brief Returns the vector of dots on the sphere
       const scitbx::af::shared<Point>& dots() const { return m_vec; }
-      /// @todo Trying to see if this gets the shared<Point> defined...
-      void XXX(const scitbx::af::shared<Point>& dots) { return; }
 
       /// @brief Accessor method for the radius used to construct the sphere.
       double radius() const { return m_rad; }
