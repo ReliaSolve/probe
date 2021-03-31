@@ -64,8 +64,8 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
+    .def(init<scitbx::af::shared<Point> >())
     .def(init<>())
-    .def(init<const scitbx::af::shared<Point>&>())
     .def("dots", &DotSphere::dots, return_internal_reference<>())
     .def("radius", &DotSphere::radius)
     .def("density", &DotSphere::density)
