@@ -3,7 +3,7 @@
 
 #pragma once
 
-//#include <vector>
+#include <vector>
 #include <array>
 #include <set>
 #include <algorithm>
@@ -99,7 +99,7 @@ namespace molprobity {
       /// get a reference to the vector where a specified Point is located.  Use the
       /// grid_index() method to get an index to that vector in the grid.
       typedef std::set<iotbx::pdb::hierarchy::atom, atom_less> GridPoint;
-      scitbx::af::shared<GridPoint> m_grid;
+      std::vector<GridPoint> m_grid;
 
       /// @brief Return the index of the grid element that this point falls in.
       /// @param [in] p Point to find grid index for.  For points that lie outside
