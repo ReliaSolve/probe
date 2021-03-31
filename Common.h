@@ -21,6 +21,7 @@ namespace molprobity {
     /// not add one it failed because none had been defined...
     class Point : public scitbx::vec3<Coord> {
     public:
+      Point(Point const& c) : scitbx::vec3<Coord>(c[0], c[1], c[2]) { }
       Point(scitbx::vec3<Coord> const &c) : scitbx::vec3<Coord>(c[0],c[1],c[2]) { }
       Point(Coord x, Coord y, Coord z) : scitbx::vec3<Coord>(x,y,z) { }
       Point() : scitbx::vec3<Coord>() { }
