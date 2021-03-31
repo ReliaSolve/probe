@@ -61,10 +61,6 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   // Python iterators so we don't need to add the wrapping, just the definitions.
   typedef scitbx::af::shared<Point> PointList;
   class_<PointList>("PointList");
-  typedef scitbx::af::shared<iotbx::pdb::hierarchy::atom> AtomList;
-  class_<AtomList>("AtomList");
-  typedef scitbx::af::shared<ExtraAtomInfo> ExtraAtomInfoList;
-  class_<ExtraAtomInfoList>("ExtraAtomInfoList");
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
@@ -82,14 +78,14 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   ;
 
   class_<SpatialQuery>("SpatialQuery", init<Point, Point, Point>())
-    .def(init<AtomList const>())
+    .def(init<scitbx::af::shared<iotbx::pdb::hierarchy::atom> const>())
     .def("add", &SpatialQuery::add)
     .def("remove", &SpatialQuery::remove)
     .def("neighbors", &SpatialQuery::neighbors)
     .def("test", &SpatialQuery::test)
   ;
 
-  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<ExtraAtomInfoList,
+  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<scitbx::af::shared<ExtraAtomInfo>,
         optional<double, double, double, double, double, double> >())
     .def("score_dots", &AtomVsAtomDotScorer::score_dots)
     .def("test", &AtomVsAtomDotScorer::test)
