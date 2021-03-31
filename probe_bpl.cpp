@@ -58,7 +58,10 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   // Export the vector indexing of objects that we'll use vectors for.
   // NOTE: Everything that is using scitbx::af::shared "flex" arrays is
   // automatically wrapped for us in ways that let them be used as standard
-  // Python iterators.
+  // Python iterators so we don't need to add the wrapping, just the definitions.
+  typedef scitbx::af::shared<Point> PointList;
+  typedef scitbx::af::shared<iotbx::pdb::hierarchy::atom> AtomList;
+  typedef scitbx::af::shared<ExtraAtomInfo> ExtraAtomInfoList;
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
