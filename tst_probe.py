@@ -31,7 +31,6 @@ def RunProbeTests():
   # We first find the largest i_seq sequence number in the model and reserve that
   # many entries so we will always be able to fill in the entry for an atom.
   atoms = model.get_atoms()
-  print(' Found',len(atoms),'atoms')
   maxI = atoms[0].i_seq
   for a in atoms:
     if a.i_seq > maxI:
@@ -60,6 +59,8 @@ def RunProbeTests():
               extra[a.i_seq].isAcceptor = True
             if hb_type == "D":
               extra[a.i_seq].isDonor = True
+
+  # Construct the other objects needed for Scoring.
 
   # @todo
 

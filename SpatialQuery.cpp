@@ -43,22 +43,16 @@ SpatialQuery::SpatialQuery(Point lowerBounds, Point upperBounds, Point binSize)
   initialize(lowerBounds, upperBounds, binSize);
 }
 
-SpatialQuery::SpatialQuery(iotbx::pdb::hierarchy::model m)
+SpatialQuery::SpatialQuery(std::vector<iotbx::pdb::hierarchy::atom> atoms)
 {
   // Compute the parameters needed and initialize the grid
   Point lowerBounds(1e10, 1e10, 1e10);
   Point upperBounds(-1e10, -1e10, -1e10);
-  for (auto chain : m.chains()) {
-    for (auto residue_group : chain.residue_groups()) {
-      for (auto atom_group : residue_group.atom_groups()) {
-        for (iotbx::pdb::hierarchy::atom const& a : atom_group.atoms()) {
-          for (size_t i = 0; i < 3; i++) {
-            Point loc = a.data->xyz;
-            if (loc[i] < lowerBounds[i]) { lowerBounds[i] = loc[i]; }
-            if (loc[i] > upperBounds[i]) { upperBounds[i] = loc[i]; }
-          }
-        }
-      }
+  for (iotbx::pdb::hierarchy::atom const& a : atoms) {
+    for (size_t i = 0; i < 3; i++) {
+      Point loc = a.data->xyz;
+      if (loc[i] < lowerBounds[i]) { lowerBounds[i] = loc[i]; }
+      if (loc[i] > upperBounds[i]) { upperBounds[i] = loc[i]; }
     }
   }
 
@@ -71,14 +65,8 @@ SpatialQuery::SpatialQuery(iotbx::pdb::hierarchy::model m)
   initialize(lowerBounds, upperBounds, binSize);
 
   // Add all of the atoms in the model
-  for (auto chain : m.chains()) {
-    for (auto residue_group : chain.residue_groups()) {
-      for (auto atom_group : residue_group.atom_groups()) {
-        for (iotbx::pdb::hierarchy::atom const& a : atom_group.atoms()) {
-          add(a);
-        }
-      }
-    }
+  for (iotbx::pdb::hierarchy::atom const& a : atoms) {
+    add(a);
   }
 }
 
@@ -250,7 +238,8 @@ std::string SpatialQuery::test()
 
   // Test the hierarchy-based constructor, which will be used for later tests as well.
   {
-    SpatialQuery q(m);
+    // There is only one atom group/alternate conformation here, so we can just grab its atoms
+    SpatialQuery q(m.chains()[0].residue_groups()[0].atom_groups()[0].atoms());
     if (q.m_lowerBounds != Point(0, 0, 0)) {
       return "molprobity::probe::SpatialQuery::test(): Unexpected lower bound on model-based construction";
     }

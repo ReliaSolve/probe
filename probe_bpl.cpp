@@ -81,7 +81,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   ;
 
   class_<SpatialQuery>("SpatialQuery", init<Point, Point, Point>())
-    .def(init<iotbx::pdb::hierarchy::model>())
+    .def(init<std::vector<iotbx::pdb::hierarchy::atom> const>())
     .def("add", &SpatialQuery::add)
     .def("remove", &SpatialQuery::remove)
     .def("neighbors", &SpatialQuery::neighbors)

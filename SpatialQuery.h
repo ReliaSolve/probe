@@ -28,15 +28,19 @@ namespace molprobity {
       /// @brief Construct with a hierarchy, filling in all atoms.
       /// 
       /// This is a helper constructor that generates a filled-in structure
-      /// whose extent matches that of the hierarchy passed in, and that is
+      /// whose extent matches that of the atom vector passed in, and that is
       /// pre-filled with all of its atoms.  The bin sizes are such that there
-      /// are 100 bins per axis.  This is equivalent to calling the bounds-based
-      /// constructor and then calling add() on all of its atoms.
-      /// @param [in] m Model used to determine spatial extent.
+      /// at most 50 bins per axis.  This is equivalent to calling the bounds-based
+      /// constructor and then calling add() on all of the atoms.
+      /// @param [in] atoms Vector of atoms used to determine spatial extent.
       ///             the bin sizes are 3 Angstroms on each axis but with a maximum of
       ///             50 steps along each axis (125,000 total bins).  All atoms in the
       ///             model are added.
-      SpatialQuery(iotbx::pdb::hierarchy::model m);
+      ///             Note: For most cases, these atoms should all be from the same
+      ///             conformation of a hierarchy, although it is of course possible to
+      ///             use the parent() methods to chase up the hierarchy and verify that
+      ///             the atom is in a specific group.
+      SpatialQuery(std::vector<iotbx::pdb::hierarchy::atom> const atoms);
 
       /// @brief Add an atom to the query object
       /// @param [in] a Atom to be added to the query object.
