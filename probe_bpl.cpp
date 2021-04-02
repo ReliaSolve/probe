@@ -23,17 +23,8 @@ boost::python::tuple wrap_vec3_array(Point const& d) {
 
 BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
-  // Describe and name compound classes that we need access to.
-
-  // This class is already exposed as its more basic vec3<double> class, but if we
-  // don't include this we get an error saying that no class is registered...
-  /*
-  class_<Point>("Point", init<double, double, double>())
-    .def(init<>())
-    .def("size", &Point::size)
-    .add_property("elems", wrap_vec3_array)
-  ;
-  */
+  // Describe and name compound classes that we need access to beyond those that are
+  // already defined for us by scitbx and array.
 
   class_<ContactResult>("ContactResult", init<>())
     .add_property("closestContact", &ContactResult::closestContact)
@@ -47,7 +38,6 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .add_property("isDummyHydrogen", &ExtraAtomInfo::getIsDummyHydrogen, &ExtraAtomInfo::setIsDummyHydrogen)
     ;
 
-  // These are read-only methods.  They cannot be filled in by Python.
   class_<AtomVsAtomDotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
     .add_property("valid", &AtomVsAtomDotScorer::ScoreDotsResult::valid)
     .add_property("bumpSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::bumpSubScore)
@@ -57,14 +47,6 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("totalScore", &AtomVsAtomDotScorer::ScoreDotsResult::totalScore)
     ;
 
-  // Export the vector indexing of objects that we'll use vectors for.
-  // NOTE: Everything that is using scitbx::af::shared "flex" arrays is
-  // automatically wrapped for us in ways that let them be used as standard
-  // Python iterators so we don't need to add the wrapping.
-  //typedef scitbx::af::shared<Point> PointList;
-  //class_<PointList>("PointList");
-
-  // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
     .def(init<>())
     .def("dots", &DotSphere::dots)
@@ -92,6 +74,12 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("score_dots", &AtomVsAtomDotScorer::score_dots)
     .def("test", &AtomVsAtomDotScorer::test)
     ;
+
+  // Export the vector indexing of objects that we'll use vectors for.
+  // NOTE: Everything that is using scitbx::af::shared "flex" arrays is
+  // automatically wrapped for us in ways that let them be used as standard
+  // Python iterators so we don't need to add the wrapping.  We only need
+  // to describe any std::vector values that we use.
 
   // Export the global functions
   def("closest_contact", closest_contact, "Point of closest contact and distance for dot on atom.");

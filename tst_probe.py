@@ -65,9 +65,9 @@ def RunProbeTests():
 
   # Construct a SpatialQuery and fill in the atoms.
   sq = probe.SpatialQuery(atoms)
-  nb = sq.neighbors(probe.Point(0,0,0), 0, 1000)
-  print('XXX',nb)
-  print('XXX Found this many neighbors: ', len(nb))
+  nb = sq.neighbors((0,0,0), 0, 1000)
+  #print('XXX',nb)
+  #print('XXX Found this many neighbors: ', len(nb))
 
   # Construct the other objects needed for Scoring.
 
