@@ -17,7 +17,7 @@ def RunProbeTests():
   sphere1 = cache.get_sphere(1)
   dots = sphere1.dots()
   print(' Found',len(dots),'dots')
-  print('First dot is at',dots[0].elems[0],dots[0].elems[1],dots[0].elems[2])
+  print('First dot is at',dots[0][0],dots[0][1],dots[0][2])
 
   #========================================================================
   # Make sure we can fill in an ExtraAtomInfoList and pass it to scoring
