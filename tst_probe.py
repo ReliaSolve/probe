@@ -40,6 +40,8 @@ def RunProbeTests():
     extra.append(probe.ExtraAtomInfo())
 
   # Traverse the hierarchy and look up the extra data to be filled in.
+  # Get a list of all the atoms in the chain while we're at it
+  atoms = []
   mon_lib_srv = model.get_mon_lib_srv()
   ener_lib = mmtbx.monomer_library.server.ener_lib()
   ph = model.get_hierarchy()
@@ -52,6 +54,7 @@ def RunProbeTests():
           atom_dict = md.atom_dict()
 
           for a in ag.atoms():
+            atoms.append(a)
             te = atom_dict[a.name.strip()].type_energy
             extra[a.i_seq].vdwRadius = ener_lib.lib_atom[te].vdw_radius
             hb_type = ener_lib.lib_atom[te].hb_type
@@ -60,7 +63,11 @@ def RunProbeTests():
             if hb_type == "D":
               extra[a.i_seq].isDonor = True
 
-  # Get a list of all the atoms in the chain
+  # Construct a SpatialQuery and fill in the atoms.
+  sq = probe.SpatialQuery(atoms)
+  nb = sq.neighbors(probe.Point(0,0,0), 0, 1000)
+  print('XXX',nb)
+  print('XXX Found this many neighbors: ', len(nb))
 
   # Construct the other objects needed for Scoring.
 
