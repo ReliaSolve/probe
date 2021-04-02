@@ -25,7 +25,7 @@ namespace molprobity {
       DotSphere(double radius, double density);
 
       /// @brief Returns the vector of dots on the sphere
-      scitbx::af::shared<Point> dots() { return m_vec; }
+      scitbx::af::shared<Point> &dots() { return m_vec; }
 
       /// @brief Accessor method for the radius used to construct the sphere.
       double radius() const { return m_rad; }
