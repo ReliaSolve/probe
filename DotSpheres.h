@@ -26,6 +26,7 @@ namespace molprobity {
 
       /// @brief Returns the vector of dots on the sphere
       scitbx::af::shared<Point> const &dots() const { return m_vec; }
+      scitbx::af::shared<Point> dotsCopy() { return m_vec; }
 
       /// @brief Accessor method for the radius used to construct the sphere.
       double radius() const { return m_rad; }
