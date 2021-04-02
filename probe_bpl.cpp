@@ -60,7 +60,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
   // automatically wrapped for us in ways that let them be used as standard
   // Python iterators so we don't need to add the wrapping.
   typedef scitbx::af::shared<Point> PointList;
-  class_<PointList>("PointList");
+  //class_<PointList>("PointList");
 
   // Export the classes we define
   class_<DotSphere>("DotSphere", init<double, double>())
