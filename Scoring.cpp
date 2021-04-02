@@ -90,7 +90,6 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   if (std::abs(sourceAtom.data->occ) < minOccupancy) {
     return ret;
   }
-  /// @todo Check the conformation to make sure this atom is visible in it
 
   // Find the neighboring atoms that are potentially interacting.
   // The nonzero minimum distance prevents us from selecting the source atom.
@@ -100,7 +99,6 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   // Select only those atoms actually interacting: that have sufficient occupancy, for whom the
   // gap between the Van Der Waals surfaces is less than the probe radius, and which
   // are not in the excluded list.
-  /// @todo Check the conformation to make sure they are both visible to each other.
   scitbx::af::shared<iotbx::pdb::hierarchy::atom> interacting;
   unsigned sourceID = sourceAtom.data->i_seq;
   ExtraAtomInfo const& sourceExtra = m_extraInfo[sourceID];
@@ -125,10 +123,6 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
       interacting.push_back(a);
     }
   }
-
-  /// @todo Useful tidbits.  Remove when done.
-  // bool h = sourceAtom.element_is_hydrogen();
-  /// @todo end useful tidbits
 
   // Run through all of the dots and determine whether and how to score each.
   for (Point const& d : dots) {
@@ -204,7 +198,6 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     // If the dot was close enough to some non-bonded atom, check to see if it should be removed
     // from consideration because it is also inside an excluded atom.
     if (keepDot) {
-      /// @todo Check to make sure they are in interacting alternate conformations.
       for (iotbx::pdb::hierarchy::atom const& e : exclude) {
         double vdwe = m_extraInfo[e.data->i_seq].getVdwRadius();
         if ((q - e.data->xyz).length_sq() < vdwe * vdwe) {
