@@ -58,6 +58,12 @@ namespace molprobity {
 
     class ExtraAtomInfo {
     public:
+      /// @brief Constructor with default parameters
+      ExtraAtomInfo(double vdwRadius = 0, bool isAcceptor = false, bool isDonor = false,
+        bool isDummyHydrogen = false)
+        : m_vdwRadius(vdwRadius), m_isAcceptor(isAcceptor), m_isDonor(isDonor)
+        , m_isDummyHydrogen(isDummyHydrogen) {}
+
       /// @brief Get and set methods
       double  getVdwRadius() const { return m_vdwRadius; }
       void setVdwRadius(double val) { m_vdwRadius = val; }

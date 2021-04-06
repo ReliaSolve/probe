@@ -292,7 +292,10 @@ public:
   bool isDummyHydrogen;
 };
 static std::vector<AtomInfo> testAtoms = {
-  { {0,0,0}, 1, "", 1.0, false, true, false}      // Uncharged hydrogen at the origin
+  { { 0, 0, 0}, 1.0, "", 1.5, false, false, false},      // Uncharged larger atom at the origin with no flags
+  { {10, 0, 0}, 1.0, "", 1.5, false, false, false},      // Uncharged larger atom with no flags
+  { {20, 0, 0}, 1.0, "", 1.0, false, false, false},      // Uncharged hydrogen with no flags
+  //@todo Generate in all combinations rather than listing by hand?
 };
 
 std::string AtomVsAtomDotScorer::test()
@@ -303,13 +306,24 @@ std::string AtomVsAtomDotScorer::test()
   iotbx::pdb::hierarchy::chain c;
   iotbx::pdb::hierarchy::residue_group rg;
   iotbx::pdb::hierarchy::atom_group ag;
-  size_t numAtoms = 10;
-  Coord spacing = 5;
+  Coord spacing = 10;
+  std::vector<ExtraAtomInfo> extraInfo = {
+    { 1.5, false, false, false },   // Larger atom with no special flags
+    { 1, false, false, false },     // Hydrogen with no special flags
+    { 1.5, true, false, false },    // Larger atom acceptor
+    { 1, false, true, false },      // Hydrogen donor
+    { 1, false, false, true },      // Dummy hydrogen
+  };
+  size_t numAtoms = extraInfo.size();
   for (int x = 0; x < numAtoms; x++) {
     for (int y = 0; y < numAtoms; y++) {
       for (int z = 0; z < numAtoms; z++) {
         Point v(x * spacing, y * spacing, z * spacing);
         iotbx::pdb::hierarchy::atom a(v, v);
+        switch (x) {
+        case 0:
+          a.data->element = "H";
+        }
         ag.append_atom(a);
       }
     }
@@ -320,6 +334,11 @@ std::string AtomVsAtomDotScorer::test()
 
   // Sweep various atom types from far away to near and make sure their interaction
   // curves match what is expected.
+  /// @todo
+
+  // Add an excluded atom that completely covers one of the model atoms + the probe radius
+  // and make sure that it removes the impact of that atom.
+  /// @todo
 
   /// @todo
   return "";
