@@ -45,6 +45,9 @@ namespace molprobity {
     double dot2srcCenter(const Point& dot, const Point& srcLoc, double srcVDWRad, const Point& targLoc);
 
     /// @brief @todo Figure out what this is computing.
+    /// @param [in] ra Radius of the source atom
+    /// @param [in] rb Radius of the target atom
+    /// @param [in] rp Probe radius
     double kissEdge2bullsEye(double ra, double rb, double rp);
 
     /// @brief @todo Figure out what this is computing.
@@ -153,9 +156,9 @@ namespace molprobity {
       /// @param [in] onlyBumps If true, ignore near touches and count even hydrogen bonds as bumps.
       /// @return Normalized sum of scores, also broken down by hydrogen bond vs. bump scores.
       ScoreDotsResult score_dots(iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,
-        SpatialQuery spatialQuery, double nearbyRadius, double probeRadius,
-        scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude,
-        scitbx::af::shared<Point> dots, double density, bool onlyBumps = false);
+        SpatialQuery &spatialQuery, double nearbyRadius, double probeRadius,
+        scitbx::af::shared<iotbx::pdb::hierarchy::atom> const &exclude,
+        scitbx::af::shared<Point> const &dots, double density, bool onlyBumps = false);
 
       //===========================================================================
       // Seldom-used methods below here.
