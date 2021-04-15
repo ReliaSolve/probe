@@ -44,13 +44,21 @@ namespace molprobity {
     /// @return The distance from a dot to the point on the source surface that is closest to the target
     double dot2srcCenter(const Point& dot, const Point& srcLoc, double srcVDWRad, const Point& targLoc);
 
-    /// @brief @todo Figure out what this is computing.
+    /// @brief This is the distance from the point on the source atom closest to the target to the edge
+    ///        of contact when the source and target are in optimal contact?
+    ///        @todo Figure out for sure what this is computing.
     /// @param [in] ra Radius of the source atom
     /// @param [in] rb Radius of the target atom
     /// @param [in] rp Probe radius
     double kissEdge2bullsEye(double ra, double rb, double rp);
 
-    /// @brief @todo Figure out what this is computing.
+    /// @brief A dot is annular if it is further from the center of contact than edge of the overlap
+    /// region is at optimum contact.
+    /// 
+    /// This checks to make sure that dots that would not have contributed to a good score at optimium
+    /// contact are not considered to contribute to a good score when the atoms are overlapping or far from
+    /// each other?
+    /// @todo Figure out for sure what this is computing.
     bool annularDots(const Point& dot, const Point& srcLoc, double srcVDWRad,
       const Point& targLoc, double targVDWRad, double probeRadius);
 

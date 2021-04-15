@@ -294,18 +294,6 @@ public:
   bool isDummyHydrogen;
 };
 
-static scitbx::af::shared<Point> GetDotsFor(iotbx::pdb::hierarchy::atom const& atom, DotSphere const& dotSphere)
-{
-  scitbx::af::shared<Point> ret;
-  Point const &center = atom.data->xyz;
-  scitbx::af::shared<Point> const& unitDots = dotSphere.dots();
-  for (Point const& p : unitDots) {
-    ret.push_back(p + center);
-  }
-
-  return ret;
-}
-
 std::string AtomVsAtomDotScorer::test()
 {
   // Construct test cases with all combinations of charges and extra information, holding the
@@ -382,7 +370,7 @@ std::string AtomVsAtomDotScorer::test()
                 // Even when we have a close clash, we should get no response.
                 source.set_xyz({ sourceRad,0,0 });
                 ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
-                  probeRad, exclude, GetDotsFor(source, ds), ds.density());
+                  probeRad, exclude, ds.dots(), ds.density());
                 if (!res.valid) {
                   return "AtomVsAtomDotScorer::test(): Could not score dots for excluded-atom case";
                 }
@@ -402,7 +390,7 @@ std::string AtomVsAtomDotScorer::test()
                  // Even when we have a close clash, we should get no response.
                  source.set_xyz({ sourceRad,0,0 });
                  ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
-                   probeRad, exclude, GetDotsFor(source, ds), ds.density());
+                   probeRad, exclude, ds.dots(), ds.density());
                  if (!res.valid) {
                    return "AtomVsAtomDotScorer::test(): Could not score dots for dummy hydrogen case";
                  }
@@ -419,7 +407,7 @@ std::string AtomVsAtomDotScorer::test()
              {
                source.set_xyz({ sourceRad,0,0 });
                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
-                 probeRad, exclude, GetDotsFor(source, ds), ds.density());
+                 probeRad, exclude, ds.dots(), ds.density());
                if (!res.valid) {
                  return "AtomVsAtomDotScorer::test(): Could not score dots for bad-bump case";
                }
@@ -433,7 +421,7 @@ std::string AtomVsAtomDotScorer::test()
              {
                source.set_xyz({ sourceRad + targetRad + 0.001,0,0 });
                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
-                 probeRad, exclude, GetDotsFor(source, ds), ds.density());
+                 probeRad, exclude, ds.dots(), ds.density());
                if (!res.valid) {
                  return "AtomVsAtomDotScorer::test(): Could not score dots for bump-only test case";
                }
