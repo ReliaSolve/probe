@@ -3805,7 +3805,7 @@ void examineDots(atom *src, int type, atom *scratch,
 
          else if(    DoWatWat == FALSE
                   && ( src->props & WATER_PROP)
-                  && (targ->props & WATER_PROP))
+                  && (targ->props & WATER_PROP))  /// @todo Should be ||, skip if either atom is a water?
          {
             ; /* water will not contribute when not being considered*/
          }

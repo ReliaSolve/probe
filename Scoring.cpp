@@ -79,6 +79,13 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   // It is passed only the dots that it should score rather than excluding them
   // internally like that function does.
 
+  // If we're looking for other contacts besides bumps, we need to add twice the
+  // probe radius to the neighbor list to ensure that we include atoms where the
+  // probe spans from the source to the target.
+  if (!onlyBumps) {
+    nearbyRadius += 2 * probeRadius;
+  }
+
   // Default return has 0 value for all subscores.
   ScoreDotsResult ret;
 
@@ -369,7 +376,7 @@ std::string AtomVsAtomDotScorer::test()
 
                 // Even when we have a close clash, we should get no response.
                 source.set_xyz({ sourceRad,0,0 });
-                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
+                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                   probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                 if (!res.valid) {
                   return "AtomVsAtomDotScorer::test(): Could not score dots for excluded-atom case";
@@ -388,7 +395,7 @@ std::string AtomVsAtomDotScorer::test()
                if (!hBond) {
                  // Even when we have a close clash, we should get no response.
                  source.set_xyz({ sourceRad,0,0 });
-                 ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
+                 ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                    probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                  if (!res.valid) {
                    return "AtomVsAtomDotScorer::test(): Could not score dots for dummy hydrogen case";
@@ -405,7 +412,7 @@ std::string AtomVsAtomDotScorer::test()
              // we should get bad bumps in all cases.
              {
                source.set_xyz({ sourceRad,0,0 });
-               ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
+               ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                  probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                if (!res.valid) {
                  return "AtomVsAtomDotScorer::test(): Could not score dots for bad-bump case";
@@ -419,7 +426,7 @@ std::string AtomVsAtomDotScorer::test()
              // atoms are not touching.  Otherwise, slight interaction.
              {
                source.set_xyz({ sourceRad + targetRad + 0.001,0,0 });
-               ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad + probeRad,
+               ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                  probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                if (!res.valid) {
                  return "AtomVsAtomDotScorer::test(): Could not score dots for bump-only test case";

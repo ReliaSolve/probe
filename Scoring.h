@@ -156,7 +156,10 @@ namespace molprobity {
       /// @param [in] spatialQuery Structure to ask for neighbors of the atom.  This must contain
       ///             only atoms that are to be considered; those that are in the same conformation
       ///             or in all conformations.
-      /// @param [in] nearbyRadius Maximum distance that an atom can be away and still be a neighbor
+      /// @param [in] nearbyRadius Maximum distance that an atom can be away and still be a neighbor.
+      ///             This should NOT include consideration of the probe radius, which will be added
+      ///             inside this function when it is required (depending on whether onlyBumps is
+      ///             set).
       /// @param [in] probeRadius Radius of the probe rolled between the two potentially-contacting atoms
       /// @param [in] excluded Atoms that are to be excluded from contact.
       /// @param [in] dots Vector of dots to compare.  Each is added to the sourceAtom origin.
