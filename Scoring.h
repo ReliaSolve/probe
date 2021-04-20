@@ -152,7 +152,8 @@ namespace molprobity {
 
       /// @brief Determine the bump and hydrogen-bond subscores for a vector of dots on an atom
       /// @param [in] sourceAtom Atom that the dots are surrounding.
-      /// @param [in] minOccupancy The minimum occupancy of the atom to be scored.
+      /// @param [in] minOccupancy The minimum occupancy of the atom to be scored (applies to both
+      ///             source and target; if either is below this, it will not be scored.
       /// @param [in] spatialQuery Structure to ask for neighbors of the atom.  This must contain
       ///             only atoms that are to be considered; those that are in the same conformation
       ///             or in all conformations.

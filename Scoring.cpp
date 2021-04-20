@@ -528,9 +528,100 @@ std::string AtomVsAtomDotScorer::test()
   }
 
   // Test the setting of weights for the various subscores.
-  /// @todo
+  {
+    double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
+    DotSphere ds(sourceRad, 200);
+    unsigned int atomSeq = 0;
 
-  // Test the setting of gap distances.
+    // Construct and fill the SpatialQuery information
+    // with a vector of a two target atoms, including extra info looked up by
+    // their i_seq values.  One is an acceptor and the other is not.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms;
+    scitbx::af::shared<ExtraAtomInfo> infos;
+
+    { // The first is a bond acceptor at the origin
+      iotbx::pdb::hierarchy::atom a;
+      a.set_xyz({ 0,0,0 });
+      a.set_occ(1);
+      a.data->i_seq = atomSeq++;
+      atoms.push_back(a);
+      ExtraAtomInfo e(targetRad, true);
+      infos.push_back(e);
+    }
+
+    { // The second is not a bond acceptor and is a bit less than the source atom away from the edge of the first.
+      iotbx::pdb::hierarchy::atom a;
+      a.set_xyz({ 2 * targetRad + 2*(sourceRad*0.8),0,0 });
+      a.set_occ(1);
+      a.data->i_seq = atomSeq++;
+      atoms.push_back(a);
+      ExtraAtomInfo e(targetRad, false);
+      infos.push_back(e);
+    }
+    SpatialQuery sq(atoms);
+
+    // Construct the source atom, including its extra info looked up by
+    // its i_seq value.  It is a hydrogen donor and is located halfway
+    // between the two atoms.
+    iotbx::pdb::hierarchy::atom source;
+    source.set_xyz({ targetRad + sourceRad * 0.8 ,0,0 });
+    source.set_occ(1);
+    source.data->i_seq = atomSeq++;
+    ExtraAtomInfo se(sourceRad, false, true);
+    infos.push_back(se);
+
+    // Construct an empty exclusion list.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
+
+    // Results holds a vector of six values, three for the gap, bump, and bond weights used in
+    // each run and three for the attract, bump, and hBond scores measured with these weights.
+    std::vector< std::vector<double> > results;
+
+    // Run tests with a hydrogen source molecule that can H-bond with one of two target atoms so that
+    // we get results in all three of the score results when we compare it.
+    for (double wGap = 0.25; wGap < 10; wGap += 3) {
+      for (double wBump = 0.25; wBump < 10; wBump += 3) {
+        for (double wBond = 0.25; wBond < 10; wBond += 3) {
+
+          // Construct the scorer to be used.
+          AtomVsAtomDotScorer as(infos,wGap, wBump, wBond);
+
+          // Get the dot results and store all of the params and results in a vector
+          ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+            probeRad, exclude, ds.dots(), ds.density());
+          if (!res.valid) {
+            return "AtomVsAtomDotScorer::test(): Could not score dots for weight scaling cases";
+          }
+          std::vector<double> row = { wGap, wBump, wBond, res.attractSubScore, res.bumpSubScore, res.hBondSubScore };
+          results.push_back(row);
+        }
+      }
+    }
+
+    // Ensure that the ratio of the scores matches the ratio of the weights for each entry between
+    // the first row and all other rows.
+    for (size_t i = 1; i < results.size(); i++) {
+      // The attraction score is not a linear weighting of the
+      // dot scores, so we can only check those for equality or inequality.
+      bool paramClose = closeTo(1, results[0][0] / results[i][0]);
+      bool resultClose = closeTo(1, results[0][3 + 0] / results[i][3 + 0]);
+      if (paramClose != resultClose) {
+        return "AtomVsAtomDotScorer::test(): Inconsistent gap ratio for weight scaling case";
+      }
+
+      // Check the other two scores for linearity.
+      for (size_t j = 1; j < 3; j++) {
+        double paramRatio = results[0][j] / results[i][j];
+        double resultRatio = results[0][3 + j] / results[i][3 + j];
+        if (!closeTo(paramRatio, resultRatio)) {
+          return "AtomVsAtomDotScorer::test(): Unequal ratio for weight scaling case";
+        }
+      }
+    }
+
+  }
+
+  // Test the setting of bond-gap distances.
   /// @todo
 
   // Test the control of occupancy level
