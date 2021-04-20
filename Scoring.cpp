@@ -267,7 +267,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
       
     default:
       // This should never happen.  Returns with ret invalid to indicate an error.
-      std::cerr << "AtomVsAtomDotScorer::score_dots(): Unrecognized overlap type: " << overlapType << std::endl;
+      std::cerr << "AtomVsAtomDotScorer::score_dots(): Internal error: Unrecognized overlap type: " << overlapType << std::endl;
       return ret;
     }
   }
@@ -443,9 +443,21 @@ std::string AtomVsAtomDotScorer::test()
              }
 
              // When we are only checking for bumps, even hydrogen bonds should be counted as bumps.
-             /// @todo
+             if (onlyBumps) {
+               source.set_xyz({ sourceRad + targetRad - 0.1,0,0 });
+               ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+                 probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
+               if (!res.valid) {
+                 return "AtomVsAtomDotScorer::test(): Could not score dots for bump-only hydrogen-bond test case";
+               }
+               if (res.hBondSubScore != 0) {
+                 return "AtomVsAtomDotScorer::test(): Got unexpected hydrogen bond score for bump-only test case";
+               }
+               if (res.bumpSubScore >= 0) {
+                 return "AtomVsAtomDotScorer::test(): Got unexpected bump score for bump-only test case";
+               }
+             }
 
-             /// @todo
            }
          }
        }
@@ -456,11 +468,72 @@ std::string AtomVsAtomDotScorer::test()
   }
   }
 
-  // Test the control of occupancy level
+  // Sweep an atom from just touching to far away and make sure the attract
+  // curve is monotonically decreasing to 0.
+  {
+    double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
+    DotSphere ds(sourceRad, 200);
+    unsigned int atomSeq = 0;
+
+    // Construct and fill the SpatialQuery information
+    // with a vector of a single target atom, including its extra info looked up by
+    // its i_seq value.
+    iotbx::pdb::hierarchy::atom a;
+    a.set_xyz({ 0,0,0 });
+    a.set_occ(1);
+    a.data->i_seq = atomSeq++;
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms;
+    atoms.push_back(a);
+    SpatialQuery sq(atoms);
+    ExtraAtomInfo e(targetRad);
+    scitbx::af::shared<ExtraAtomInfo> infos;
+    infos.push_back(e);
+
+    // Construct the source atom, including its extra info looked up by
+    // its i_seq value.
+    iotbx::pdb::hierarchy::atom source;
+    source.set_occ(1);
+    source.data->i_seq = atomSeq++;
+    ExtraAtomInfo se(sourceRad);
+    infos.push_back(se);
+
+    // Construct an empty exclusion list.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
+
+    // Construct the scorer to be used.
+    AtomVsAtomDotScorer as(infos);
+
+    // Sweep the source atom
+    double lastAttract = 1e10;
+    bool foundNonzero = false;
+    for (double gap = 0; gap < 10; gap += 0.1) {
+      source.set_xyz({ targetRad + sourceRad + gap, 0, 0 });
+      ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for swept-distance case";
+      }
+      if ((res.attractSubScore != res.totalScore()) || (res.attractSubScore > lastAttract)) {
+        return "AtomVsAtomDotScorer::test(): Non-monotonic scores for swept-distance case";
+      }
+      lastAttract = res.attractSubScore;
+      if (lastAttract != 0) { foundNonzero = true; }
+    }
+    if (!foundNonzero) {
+      return "AtomVsAtomDotScorer::test(): No nonzero scores for swept-distance case";
+    }
+    if (lastAttract != 0) {
+      return "AtomVsAtomDotScorer::test(): Non-empty last score for swept-distance case";
+    }
+  }
+
+  // Test the setting of weights for the various subscores.
   /// @todo
 
-  // Sweep an atom from far away to near and make sure the interaction
-  // curve matches what is expected.
+  // Test the setting of gap distances.
+  /// @todo
+
+  // Test the control of occupancy level
   /// @todo
 
   /// @todo
