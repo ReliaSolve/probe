@@ -143,7 +143,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     double minGap = 1e10;                 ///< Nearest atom that we found
     bool isHydrogenBond = false;          ///< Are we looking at a hydrogen bond to our neighbor?
     bool tooCloseHydrogenBond = false;    ///< Are we too close to be a hydrogen bond?
-    double hydrogenBondMinDist = 1e10;    ///< Hydrogen bond minimum distance based on the atom types.
+    double hydrogenBondMinDist = 0;       ///< Hydrogen bond minimum distance based on the atom types (will be set below).
     bool keepDot = false;                 ///< Did we find a neighbor and we're not in a bonded atom?
 
     iotbx::pdb::hierarchy::atom const *cause = nullptr;
@@ -622,7 +622,146 @@ std::string AtomVsAtomDotScorer::test()
   }
 
   // Test the setting of bond-gap distances.
-  /// @todo
+  {
+    double badBondGap = 0.2;
+    double minRegularHydrogenBondGap = badBondGap + 0.2;
+    double minChargedHydrogenBondGap = minRegularHydrogenBondGap + 0.2;
+
+    double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
+    DotSphere ds(sourceRad, 200);
+    unsigned int atomSeq = 0;
+
+    // Construct and fill the SpatialQuery information
+    // with a vector of a single target atom, including its extra info looked up by
+    // its i_seq value.  It will be an acceptor and it will have a negative charge
+    iotbx::pdb::hierarchy::atom a;
+    a.set_xyz({ 0,0,0 });
+    a.set_occ(1);
+    a.set_charge("-");
+    a.data->i_seq = atomSeq++;
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms;
+    atoms.push_back(a);
+    SpatialQuery sq(atoms);
+    ExtraAtomInfo e(targetRad, true);
+    scitbx::af::shared<ExtraAtomInfo> infos;
+    infos.push_back(e);
+
+    // Construct an empty exclusion list.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
+
+    // Construct a source atom, including its extra info looked up by
+    // its i_seq value.  This will be a hydrogen but not a donor to check
+    // for the standard bad-bump result.
+    // Test it against both sides of the bad-bump line to see if it responds correctly.
+    {
+      iotbx::pdb::hierarchy::atom source;
+      source.set_occ(1);
+      source.data->i_seq = atomSeq++;
+      ExtraAtomInfo se(sourceRad);
+      infos.push_back(se);
+      ScoreDotsResult res;
+
+      // Construct the scorer to be used with the specified bond gaps.
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+
+      // Check the source atom against outside and inside the gap
+      source.set_xyz({ targetRad + sourceRad - badBondGap + 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for badBondGap setting case";
+      }
+      if (res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for badBondGap setting case";
+      }
+
+      source.set_xyz({ targetRad + sourceRad - badBondGap - 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for badBondGap setting case";
+      }
+      if (!res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for badBondGap setting case";
+      }
+    }
+
+    // Construct a source atom, including its extra info looked up by
+    // its i_seq value.  This will be an uncharged hydrogen donor to check
+    // for the non-charged hydrogen bad-bump result.
+    // Test it against both sides of the bad-bump line to see if it responds correctly.
+    {
+      iotbx::pdb::hierarchy::atom source;
+      source.set_occ(1);
+      source.data->i_seq = atomSeq++;
+      ExtraAtomInfo se(sourceRad,false, true);
+      infos.push_back(se);
+      ScoreDotsResult res;
+
+      // Construct the scorer to be used with the specified bond gaps.
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+
+      // Check the source atom against outside and inside the gap
+      source.set_xyz({ targetRad + sourceRad - minRegularHydrogenBondGap - badBondGap + 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for minRegularHydrogenBondGap setting case";
+      }
+      if (res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for minRegularHydrogenBondGap setting case";
+      }
+
+      source.set_xyz({ targetRad + sourceRad - minRegularHydrogenBondGap - badBondGap - 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for minRegularHydrogenBondGap setting case";
+      }
+      if (!res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for minRegularHydrogenBondGap setting case";
+      }
+    }
+
+    // Construct a source atom, including its extra info looked up by
+    // its i_seq value.  This will be a charged hydrogen donor to check
+    // for the charged hydrogen bad-bump result.
+    // Test it against both sides of the bad-bump line to see if it responds correctly.
+    {
+      iotbx::pdb::hierarchy::atom source;
+      source.set_occ(1);
+      source.set_charge("+");
+      source.data->i_seq = atomSeq++;
+      ExtraAtomInfo se(sourceRad, false, true);
+      infos.push_back(se);
+      ScoreDotsResult res;
+
+      // Construct the scorer to be used with the specified bond gaps.
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+
+      // Check the source atom against outside and inside the gap
+      source.set_xyz({ targetRad + sourceRad - minChargedHydrogenBondGap - badBondGap + 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for minChargedHydrogenBondGap setting case";
+      }
+      if (res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for minChargedHydrogenBondGap setting case";
+      }
+
+      source.set_xyz({ targetRad + sourceRad - minChargedHydrogenBondGap - badBondGap - 0.1, 0, 0 });
+      res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for minChargedHydrogenBondGap setting case";
+      }
+      if (!res.hasBadBump) {
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for minChargedHydrogenBondGap setting case";
+      }
+    }
+
+  }
 
   // Test the control of occupancy level
   /// @todo

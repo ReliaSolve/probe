@@ -120,10 +120,12 @@ namespace molprobity {
       /// @param [in] hBondWeight Factor to apply to hydrogen-bond overlaps
       /// @param [in] minRegularHydrogenBondGap How much overlap can there be between a hydrogen
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the atoms
-      ///             are not both charged.
+      ///             are not both charged.  It must go badBumpBondGap beyond this before we call
+      ///             it a bad clash.
       /// @param [in] minChargedHydrogenBondGap How much overlap can there be between a hydrogen
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the
-      ///             atoms are both charged.
+      ///             atoms are both charged.  It must go badBumpBondGap beyond this before we call
+      ///             it a bad clash.
       /// @param [in] badBumpBondGap Dots that are closer than this will cause bad bump to be flagged.
       AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
         , double gapWeight = 0.25
