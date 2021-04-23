@@ -156,6 +156,8 @@ namespace molprobity {
       /// @param [in] sourceAtom Atom that the dots are surrounding.
       /// @param [in] minOccupancy The minimum occupancy of the atom to be scored (applies to both
       ///             source and target; if either is below this, it will not be scored.
+      ///             If the source is below this, the return value will be marked valid but will
+      ///             have 0 in all of its interactions.
       /// @param [in] spatialQuery Structure to ask for neighbors of the atom.  This must contain
       ///             only atoms that are to be considered; those that are in the same conformation
       ///             or in all conformations.
@@ -164,9 +166,11 @@ namespace molprobity {
       ///             inside this function when it is required (depending on whether onlyBumps is
       ///             set).
       /// @param [in] probeRadius Radius of the probe rolled between the two potentially-contacting atoms
+      ///             If this is < 0, an invalid result will be returned.
       /// @param [in] excluded Atoms that are to be excluded from contact.
       /// @param [in] dots Vector of dots to compare.  Each is added to the sourceAtom origin.
       /// @param [in] density Density of the dots on the probe sphere, used to normalize results.
+      ///             If this is <= 0, an invalid result will be returned.
       /// @param [in] onlyBumps If true, ignore near touches and count even hydrogen bonds as bumps.
       /// @return Normalized sum of scores, also broken down by hydrogen bond vs. bump scores.
       ScoreDotsResult score_dots(iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,

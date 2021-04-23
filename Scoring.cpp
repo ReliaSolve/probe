@@ -90,12 +90,14 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
   ScoreDotsResult ret;
 
   // Check for invalid parameters
-  if (density <= 0) {
+  if ((density <= 0) || (probeRadius < 0)) {
     return ret;
   }
 
   // Make sure that the occupancy of the atom is high enough to score it.
+  // If not, we send a valid but otherwise empty return value.
   if (std::abs(sourceAtom.data->occ) < minOccupancy) {
+    ret.valid = true;
     return ret;
   }
 
@@ -760,13 +762,66 @@ std::string AtomVsAtomDotScorer::test()
         return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for minChargedHydrogenBondGap setting case";
       }
     }
-
   }
 
   // Test the control of occupancy level
+  {
+    double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
+    DotSphere ds(sourceRad, 200);
+    unsigned int atomSeq = 0;
+
+    // Construct and fill the SpatialQuery information
+    // with a vector of a single target atom, including its extra info looked up by
+    // its i_seq value.  It will have an occupancy of 0.5.
+    iotbx::pdb::hierarchy::atom a;
+    a.set_xyz({ 0,0,0 });
+    a.set_occ(0.5);
+    a.data->i_seq = atomSeq++;
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms;
+    atoms.push_back(a);
+    SpatialQuery sq(atoms);
+    ExtraAtomInfo e(targetRad, true);
+    scitbx::af::shared<ExtraAtomInfo> infos;
+    infos.push_back(e);
+
+    // Construct an empty exclusion list.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
+
+    // Construct a source atom, including its extra info looked up by
+    // its i_seq value.  This will be a hydrogen but not a donor.
+    // It will have an occupancy of 0.25.
+    iotbx::pdb::hierarchy::atom source;
+    source.set_occ(0.25);
+    source.data->i_seq = atomSeq++;
+    ExtraAtomInfo se(sourceRad);
+    infos.push_back(se);
+    ScoreDotsResult res;
+
+    // Construct the scorer to be used with the specified bond gaps.
+    AtomVsAtomDotScorer as(infos);
+
+    // Check the source atom just overlapping with the target.
+    source.set_xyz({ targetRad + sourceRad - 0.1, 0, 0 });
+
+    // Occupancy values to check and whether the result should be zero:
+    std::vector<double> occupancies = { 1.0, 0.75, 0.5, 0.25, 0.1 };
+    std::vector<bool> expectZero = { true, true, true, false, false };
+    for (size_t i = 0; i < occupancies.size(); i++) {
+      res = as.score_dots(source, occupancies[i], sq, sourceRad + targetRad,
+        probeRad, exclude, ds.dots(), ds.density());
+      if (!res.valid) {
+        return "AtomVsAtomDotScorer::test(): Could not score dots for occupancy test case";
+      }
+      bool zero = res.totalScore() == 0;
+      if (zero != expectZero[i]) {
+        return "AtomVsAtomDotScorer::test(): Unexpected zero state for occupancy test case";
+      }
+    }
+  }
+
+  // Check with invalid parameters.
   /// @todo
 
-  /// @todo
   return "";
 }
 
