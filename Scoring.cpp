@@ -820,7 +820,53 @@ std::string AtomVsAtomDotScorer::test()
   }
 
   // Check with invalid parameters.
-  /// @todo
+  {
+    double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
+    DotSphere ds(sourceRad, 200);
+    unsigned int atomSeq = 0;
+
+    // Construct and fill the SpatialQuery information
+    // with a vector of a single target atom, including its extra info looked up by
+    iotbx::pdb::hierarchy::atom a;
+    a.set_xyz({ 0,0,0 });
+    a.set_occ(1);
+    a.data->i_seq = atomSeq++;
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> atoms;
+    atoms.push_back(a);
+    SpatialQuery sq(atoms);
+    ExtraAtomInfo e(targetRad, true);
+    scitbx::af::shared<ExtraAtomInfo> infos;
+    infos.push_back(e);
+
+    // Construct an empty exclusion list.
+    scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
+
+    // Construct a source atom, including its extra info looked up by
+    // its i_seq value.  This will be a hydrogen but not a donor.
+    iotbx::pdb::hierarchy::atom source;
+    source.set_occ(1);
+    source.data->i_seq = atomSeq++;
+    ExtraAtomInfo se(sourceRad);
+    infos.push_back(se);
+    ScoreDotsResult res;
+
+    // Construct the scorer to be used with the specified bond gaps.
+    AtomVsAtomDotScorer as(infos);
+
+    // Check the source atom just overlapping with the target.
+    source.set_xyz({ targetRad + sourceRad - 0.1, 0, 0 });
+
+    res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+      -0.1, exclude, ds.dots(), ds.density());
+    if (res.valid) {
+      return "AtomVsAtomDotScorer::test(): Unexpected valid result for probeRadius < 0 case";
+    }
+    res = as.score_dots(source, 1, sq, sourceRad + targetRad,
+      probeRad, exclude, ds.dots(), 0);
+    if (res.valid) {
+      return "AtomVsAtomDotScorer::test(): Unexpected valid result for density <= 0 case";
+    }
+  }
 
   return "";
 }
