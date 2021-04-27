@@ -254,7 +254,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
       if ((!onlyBumps) && !annularDots(absoluteDotLocation, sourceAtom.data->xyz, sourceExtra.getVdwRadius(),
           cause->data->xyz, m_extraInfo[cause->data->i_seq].getVdwRadius(), probeRadius)) {
 
-        double scaledGap = minGap / m_gapWeight;
+        double scaledGap = minGap / m_gapScale;
         ret.attractSubScore += exp(-scaledGap * scaledGap);
       }
       break;

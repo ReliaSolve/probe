@@ -16,7 +16,7 @@ namespace molprobity {
     /// @brief Structure to hold the results from a call to closest_contact()
     class ContactResult {
     public:
-      Point   closestContact;      ///< The point on the radius of the tested sphere closest to the dot
+      Point   closestContact;     ///< The point on the radius of the tested sphere closest to the dot
       double  distAboveSurface;   ///< Distance that the dot is above the tested sphere (negative for inside)
     };
 
@@ -115,7 +115,7 @@ namespace molprobity {
       ///         passed as parameters are used to look up directly in this vector so they must not
       ///         have changed (due to structure modification) since the extaInfo vector or the
       ///         SpatialQuery structure were generated.
-      /// @param [in] gapWeight Factor to apply to gap between atoms
+      /// @param [in] gapScale Scale factor to apply to gap between atoms (gap is divided by this)
       /// @param [in] bumpWeight Factor to apply when atoms are in bumping overlap
       /// @param [in] hBondWeight Factor to apply to hydrogen-bond overlaps
       /// @param [in] minRegularHydrogenBondGap How much overlap can there be between a hydrogen
@@ -128,14 +128,14 @@ namespace molprobity {
       ///             it a bad clash.
       /// @param [in] badBumpBondGap Dots that are closer than this will cause bad bump to be flagged.
       AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
-        , double gapWeight = 0.25
+        , double gapScale = 0.25
         , double bumpWeight = 10.0
         , double hBondWeight = 4.0
         , double minRegularHydrogenBondGap = 0.6
         , double minChargedHydrogenBondGap = 0.8
         , double badBumpBondGap = 0.4
       ) : m_extraInfo(extraInfo)
-        , m_gapWeight(gapWeight), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
+        , m_gapScale(gapScale), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
         , m_minRegularHydrogenBondGap(minRegularHydrogenBondGap)
         , m_minChargedHydrogenBondGap(minChargedHydrogenBondGap)
         , m_badBumpBondGap(badBumpBondGap) {};
@@ -188,7 +188,7 @@ namespace molprobity {
     protected:
       /// Parameters stored from constructor.
       scitbx::af::shared<ExtraAtomInfo> m_extraInfo;
-      double m_gapWeight;
+      double m_gapScale;
       double m_bumpWeight;
       double m_hBondWeight;
       double m_minRegularHydrogenBondGap;
