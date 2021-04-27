@@ -126,7 +126,7 @@ namespace molprobity {
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the
       ///             atoms are both charged.  It must go badBumpOverlap beyond this before we call
       ///             it a bad clash.
-      /// @param [in] badBumpOverlap Dots that are closer than this will cause bad bump to be flagged.
+      /// @param [in] badBumpOverlap Atoms that overlap more than this will cause bad bump to be flagged.
       AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
         , double gapScale = 0.25
         , double bumpWeight = 10.0
