@@ -118,27 +118,27 @@ namespace molprobity {
       /// @param [in] gapScale Scale factor to apply to gap between atoms (gap is divided by this)
       /// @param [in] bumpWeight Factor to apply when atoms are in bumping overlap
       /// @param [in] hBondWeight Factor to apply to hydrogen-bond overlaps
-      /// @param [in] minRegularHydrogenBondGap How much overlap can there be between a hydrogen
+      /// @param [in] maxRegularHydrogenOverlap How much overlap can there be between a hydrogen
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the atoms
-      ///             are not both charged.  It must go badBumpBondGap beyond this before we call
+      ///             are not both charged.  It must go badBumpOverlap beyond this before we call
       ///             it a bad clash.
-      /// @param [in] minChargedHydrogenBondGap How much overlap can there be between a hydrogen
+      /// @param [in] maxChargedHydrogenOverlap How much overlap can there be between a hydrogen
       ///             and the atom it is hydrogen-bonded to before we call it a clash when the
-      ///             atoms are both charged.  It must go badBumpBondGap beyond this before we call
+      ///             atoms are both charged.  It must go badBumpOverlap beyond this before we call
       ///             it a bad clash.
-      /// @param [in] badBumpBondGap Dots that are closer than this will cause bad bump to be flagged.
+      /// @param [in] badBumpOverlap Dots that are closer than this will cause bad bump to be flagged.
       AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
         , double gapScale = 0.25
         , double bumpWeight = 10.0
         , double hBondWeight = 4.0
-        , double minRegularHydrogenBondGap = 0.6
-        , double minChargedHydrogenBondGap = 0.8
-        , double badBumpBondGap = 0.4
+        , double maxRegularHydrogenOverlap = 0.6
+        , double maxChargedHydrogenOverlap = 0.8
+        , double badBumpOverlap = 0.4
       ) : m_extraInfo(extraInfo)
         , m_gapScale(gapScale), m_bumpWeight(bumpWeight), m_hBondWeight(hBondWeight)
-        , m_minRegularHydrogenBondGap(minRegularHydrogenBondGap)
-        , m_minChargedHydrogenBondGap(minChargedHydrogenBondGap)
-        , m_badBumpBondGap(badBumpBondGap) {};
+        , m_maxRegularHydrogenOverlap(maxRegularHydrogenOverlap)
+        , m_maxChargedHydrogenOverlap(maxChargedHydrogenOverlap)
+        , m_badBumpOverlap(badBumpOverlap) {};
 
       /// @brief Structure to hold the results from a call to score_dots()
       class ScoreDotsResult {
@@ -191,9 +191,9 @@ namespace molprobity {
       double m_gapScale;
       double m_bumpWeight;
       double m_hBondWeight;
-      double m_minRegularHydrogenBondGap;
-      double m_minChargedHydrogenBondGap;
-      double m_badBumpBondGap;
+      double m_maxRegularHydrogenOverlap;
+      double m_maxChargedHydrogenOverlap;
+      double m_badBumpOverlap;
     };
 
     /// @todo Figure out what all of the things needed by Probe (as opposed to Reduce) are.

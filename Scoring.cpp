@@ -186,7 +186,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
                        || (sourceExtra.getIsAcceptor() && bExtra.getIsDonor());
         if (couldHBond && ((!bothCharged) || chargeComplement)) {
           isHydrogenBond = true;
-          hydrogenBondMinDist = bothCharged ? m_minChargedHydrogenBondGap : m_minRegularHydrogenBondGap;
+          hydrogenBondMinDist = bothCharged ? m_maxChargedHydrogenOverlap : m_maxRegularHydrogenOverlap;
           tooCloseHydrogenBond = (gap < -hydrogenBondMinDist);
         } else {
           // If this is a dummy hydrogen, then we skip it, it can only be a hydrogen-bond partner
@@ -245,7 +245,7 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
     case -1:  // Clash
       ret.bumpSubScore += -m_bumpWeight * overlap;
       // See if we should flag this atom as having a bad bump
-      if (minGap < -m_badBumpBondGap) {
+      if (minGap < -m_badBumpOverlap) {
         ret.hasBadBump = true;
       }
       break;
@@ -625,9 +625,9 @@ std::string AtomVsAtomDotScorer::test()
 
   // Test the setting of bond-gap distances.
   {
-    double badBondGap = 0.2;
-    double minRegularHydrogenBondGap = badBondGap + 0.2;
-    double minChargedHydrogenBondGap = minRegularHydrogenBondGap + 0.2;
+    double badOverlap = 0.2;
+    double maxRegularHydrogenOverlap = badOverlap + 0.2;
+    double maxChargedHydrogenOverlap = maxRegularHydrogenOverlap + 0.2;
 
     double targetRad = 1.5, sourceRad = 1.0, probeRad = 0.25;
     DotSphere ds(sourceRad, 200);
@@ -664,27 +664,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
-      source.set_xyz({ targetRad + sourceRad - badBondGap + 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for badBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for badOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for badBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for badOverlap setting case";
       }
 
-      source.set_xyz({ targetRad + sourceRad - badBondGap - 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for badBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for badOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for badBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for badOverlap setting case";
       }
     }
 
@@ -701,27 +701,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
-      source.set_xyz({ targetRad + sourceRad - minRegularHydrogenBondGap - badBondGap + 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for minRegularHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for minRegularHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for maxRegularHydrogenOverlap setting case";
       }
 
-      source.set_xyz({ targetRad + sourceRad - minRegularHydrogenBondGap - badBondGap - 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for minRegularHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for minRegularHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for maxRegularHydrogenOverlap setting case";
       }
     }
 
@@ -739,27 +739,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, minRegularHydrogenBondGap, minChargedHydrogenBondGap, badBondGap);
+      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
-      source.set_xyz({ targetRad + sourceRad - minChargedHydrogenBondGap - badBondGap + 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for minChargedHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for minChargedHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for maxChargedHydrogenOverlap setting case";
       }
 
-      source.set_xyz({ targetRad + sourceRad - minChargedHydrogenBondGap - badBondGap - 0.1, 0, 0 });
+      source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for minChargedHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for minChargedHydrogenBondGap setting case";
+        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for maxChargedHydrogenOverlap setting case";
       }
     }
   }
