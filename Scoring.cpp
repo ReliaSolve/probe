@@ -160,18 +160,18 @@ DotScorer::CheckDotResult DotScorer::check_dot(
     // Determine the overlap type and amount of overlap.
     if (ret.gap >= 0) {
       ret.overlap = 0;
-      ret.overlapType = 0;
+      ret.overlapType = DotScorer::InteractionType::NearContact;
     } else if (isHydrogenBond) {
       ret.overlap = -0.5 * ret.gap;
       if (tooCloseHydrogenBond) {
         ret.gap += hydrogenBondMinDist;
-        ret.overlapType = -1;
+        ret.overlapType = DotScorer::InteractionType::Clash;
       } else {
-        ret.overlapType = 1;
+        ret.overlapType = DotScorer::InteractionType::HydrogenBond;
       }
     } else {  // ret.gap < 0 and not a hydrogen bond
       ret.overlap = -0.5 * ret.gap;
-      ret.overlapType = -1;
+      ret.overlapType = DotScorer::InteractionType::Clash;
     }
 
     /// @todo We may be able to speed things up by only computing this for contact dots
@@ -251,6 +251,8 @@ DotScorer::ScoreDotsResult DotScorer::score_dots(
 
   // Run through all of the dots and determine whether and how to score each.
   for (Point const& d : dots) {
+
+    // Find out which atom (if any) had the closest interaction, and the type of interaction.
     CheckDotResult score = check_dot(sourceAtom, sourceExtra, d, probeRadius, interacting, exclude);
 
     // Compute the score for the dot based on the overlap type and amount of overlap.
@@ -258,10 +260,10 @@ DotScorer::ScoreDotsResult DotScorer::score_dots(
     double dotScore = 0;
     switch (score.overlapType) {
 
-    case -2: // No interaction
+    case DotScorer::InteractionType::None: // No interaction
       break;
 
-    case -1:  // Clash
+    case DotScorer::InteractionType::Clash:  // Clash
       ret.bumpSubScore += -m_bumpWeight * score.overlap;
       // See if we should flag this atom as having a bad bump
       if (score.gap < -m_badBumpOverlap) {
@@ -269,14 +271,14 @@ DotScorer::ScoreDotsResult DotScorer::score_dots(
       }
       break;
 
-    case 0:   // Contact dot
+    case DotScorer::InteractionType::NearContact:   // Contact dot
       if ((!onlyBumps) && !score.annular) {
         double scaledGap = score.gap / m_gapScale;
         ret.attractSubScore += exp(-scaledGap * scaledGap);
       }
       break;
 
-    case 1:   // Hydrogen bond
+    case DotScorer::InteractionType::HydrogenBond:   // Hydrogen bond
       if (!onlyBumps) {
         ret.hBondSubScore += m_hBondWeight * score.overlap;
       } else {  // In this case, we treat it as a bump
@@ -286,7 +288,8 @@ DotScorer::ScoreDotsResult DotScorer::score_dots(
       
     default:
       // This should never happen.  Returns with ret invalid to indicate an error.
-      std::cerr << "DotScorer::score_dots(): Internal error: Unrecognized overlap type: " << score.overlapType << std::endl;
+      std::cerr << "DotScorer::score_dots(): Internal error: Unrecognized overlap type: " << 
+        static_cast<int>(score.overlapType) << std::endl;
       return ret;
     }
   }

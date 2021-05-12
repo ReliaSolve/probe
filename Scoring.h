@@ -144,11 +144,14 @@ namespace molprobity {
         , m_maxChargedHydrogenOverlap(maxChargedHydrogenOverlap)
         , m_badBumpOverlap(badBumpOverlap) {};
 
+      /// @brief Enumeration listing the types of interactions a dot can have with an atom
+      enum class InteractionType { None = -2, Clash = -1, NearContact = 0, HydrogenBond = 1 };
+
       /// @brief Structure to hold the results from a call to check_dot()
       class CheckDotResult {
       public:
-        int     overlapType = -2;           ///< -2 for no result, -1 for clash, 0 for near contact, 1 for hydrogen bond
-        iotbx::pdb::hierarchy::atom cause;  ///< Cause of the overlap, if overlapType != -2
+        InteractionType overlapType = DotScorer::InteractionType::None; ///< What kind of interaction, if any, was found
+        iotbx::pdb::hierarchy::atom cause;  ///< Cause of the overlap, if overlapType != None
         double  overlap = 0;                ///< Amount of overlap if there is a clash
         double  gap = 1e100;                ///< Gap distance (overlap may only be a fraction of this).
         bool    annular = false;            ///< Was this an annular dot?

@@ -38,6 +38,21 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .add_property("isDummyHydrogen", &ExtraAtomInfo::getIsDummyHydrogen, &ExtraAtomInfo::setIsDummyHydrogen)
     ;
 
+  enum_<DotScorer::InteractionType>("InteractionType")
+    .value("None", DotScorer::InteractionType::None)
+    .value("Clash", DotScorer::InteractionType::Clash)
+    .value("NearContact", DotScorer::InteractionType::NearContact)
+    .value("HydrogenBond", DotScorer::InteractionType::HydrogenBond)
+    ;
+
+  class_<DotScorer::CheckDotResult>("CheckDotResult", init<>())
+    .add_property("overlapType", &DotScorer::CheckDotResult::overlapType)
+    .add_property("cause", &DotScorer::CheckDotResult::cause)
+    .add_property("overlap", &DotScorer::CheckDotResult::overlap)
+    .add_property("gap", &DotScorer::CheckDotResult::gap)
+    .add_property("annular", &DotScorer::CheckDotResult::annular)
+    ;
+
   class_<DotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
     .add_property("valid", &DotScorer::ScoreDotsResult::valid)
     .add_property("bumpSubScore", &DotScorer::ScoreDotsResult::bumpSubScore)
@@ -71,6 +86,7 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 
   class_<DotScorer>("DotScorer", init<scitbx::af::shared<ExtraAtomInfo>,
         optional<double, double, double, double, double, double> >())
+    .def("check_dot", &DotScorer::check_dot)
     .def("score_dots", &DotScorer::score_dots)
     .def("test", &DotScorer::test)
     ;
