@@ -38,13 +38,13 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .add_property("isDummyHydrogen", &ExtraAtomInfo::getIsDummyHydrogen, &ExtraAtomInfo::setIsDummyHydrogen)
     ;
 
-  class_<AtomVsAtomDotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
-    .add_property("valid", &AtomVsAtomDotScorer::ScoreDotsResult::valid)
-    .add_property("bumpSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::bumpSubScore)
-    .add_property("hBondSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::hBondSubScore)
-    .add_property("attractSubScore", &AtomVsAtomDotScorer::ScoreDotsResult::attractSubScore)
-    .add_property("hasBadBump", &AtomVsAtomDotScorer::ScoreDotsResult::hasBadBump)
-    .def("totalScore", &AtomVsAtomDotScorer::ScoreDotsResult::totalScore)
+  class_<DotScorer::ScoreDotsResult>("ScoreDotsResult", init<>())
+    .add_property("valid", &DotScorer::ScoreDotsResult::valid)
+    .add_property("bumpSubScore", &DotScorer::ScoreDotsResult::bumpSubScore)
+    .add_property("hBondSubScore", &DotScorer::ScoreDotsResult::hBondSubScore)
+    .add_property("attractSubScore", &DotScorer::ScoreDotsResult::attractSubScore)
+    .add_property("hasBadBump", &DotScorer::ScoreDotsResult::hasBadBump)
+    .def("totalScore", &DotScorer::ScoreDotsResult::totalScore)
     ;
 
   class_<DotSphere>("DotSphere", init<double, double>())
@@ -69,10 +69,10 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .def("test", &SpatialQuery::test)
   ;
 
-  class_<AtomVsAtomDotScorer>("AtomVsAtomDotScorer", init<scitbx::af::shared<ExtraAtomInfo>,
+  class_<DotScorer>("DotScorer", init<scitbx::af::shared<ExtraAtomInfo>,
         optional<double, double, double, double, double, double> >())
-    .def("score_dots", &AtomVsAtomDotScorer::score_dots)
-    .def("test", &AtomVsAtomDotScorer::test)
+    .def("score_dots", &DotScorer::score_dots)
+    .def("test", &DotScorer::test)
     ;
 
   // Export the vector indexing of objects that we'll use vectors for.

@@ -109,8 +109,8 @@ namespace molprobity {
 
     //=====================================================================================================
 
-    /// @brief Class to handle scoring vectors of dots given two atoms.  Used by Reduce to compute energies.
-    class AtomVsAtomDotScorer {
+    /// @brief Class to handle scoring dots given sets of atoms.
+    class DotScorer {
     public:
       /// @brief Constructor stores the non-bonded parameters to be used to determine atom features.
       /// @param [in] extraInfo Vector of extra information pertaining to each atom in the structure
@@ -131,7 +131,7 @@ namespace molprobity {
       ///             atoms are both charged.  It must go badBumpOverlap beyond this before we call
       ///             it a bad clash.
       /// @param [in] badBumpOverlap Atoms that overlap more than this will cause bad bump to be flagged.
-      AtomVsAtomDotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
+      DotScorer(scitbx::af::shared<ExtraAtomInfo> extraInfo
         , double gapScale = 0.25
         , double bumpWeight = 10.0
         , double hBondWeight = 4.0
@@ -143,6 +143,31 @@ namespace molprobity {
         , m_maxRegularHydrogenOverlap(maxRegularHydrogenOverlap)
         , m_maxChargedHydrogenOverlap(maxChargedHydrogenOverlap)
         , m_badBumpOverlap(badBumpOverlap) {};
+
+      /// @brief Structure to hold the results from a call to check_dot()
+      class CheckDotResult {
+      public:
+        int     overlapType = -2;           ///< -2 for no result, -1 for clash, 0 for near contact, 1 for hydrogen bond
+        iotbx::pdb::hierarchy::atom cause;  ///< Cause of the overlap, if overlapType != -2
+        double  overlap = 0;                ///< Amount of overlap if there is a clash
+        double  gap = 1e100;                ///< Gap distance (overlap may only be a fraction of this).
+        bool    annular = false;            ///< Was this an annular dot?
+      };
+
+      /// @brief Score an individual dot against a specific set of interacting atoms unless within an excluded atom
+      /// @param [in] sourceAtom Atom that the dot is offset with respect to.
+      /// @param [in] dotOffset Offset from the center of the source atom to the dot
+      /// @param [in] probeRadius Radius of the probe rolled between the two potentially-contacting atoms
+      ///             If this is < 0, an invalid result will be returned.
+      /// @param [in] interacting The atoms that are to be checked because they are close enough to sourceAtom
+      ///             to interact with it.
+      /// @param [in] excluded Atoms that are to be excluded from contact, for example this could be a list
+      ///             of atoms bonded to sourceAtom.  If the dot is inside an excluded atom, it will not be
+      ///             considered even if it is overlapping with an interacting atom.
+      CheckDotResult check_dot(iotbx::pdb::hierarchy::atom sourceAtom, ExtraAtomInfo const& sourceExtra,
+        Point const& dotOffset, double probeRadius,
+        scitbx::af::shared<iotbx::pdb::hierarchy::atom> const& interacting,
+        scitbx::af::shared<iotbx::pdb::hierarchy::atom> const& exclude);
 
       /// @brief Structure to hold the results from a call to score_dots()
       class ScoreDotsResult {

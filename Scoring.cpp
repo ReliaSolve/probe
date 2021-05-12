@@ -69,7 +69,120 @@ int atom_charge(iotbx::pdb::hierarchy::atom const& atom)
   return ret;
 }
 
-AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
+DotScorer::CheckDotResult DotScorer::check_dot(
+  iotbx::pdb::hierarchy::atom sourceAtom, ExtraAtomInfo const& sourceExtra,
+  Point const& dotOffset, double probeRadius,
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> const &interacting,
+  scitbx::af::shared<iotbx::pdb::hierarchy::atom> const& exclude)
+{
+  // Defaults to "no overlap" type
+  CheckDotResult ret;
+
+  // Find the world-space location of the dot by adding it to the location of the source atom.
+  // The probe location is in the same direction as d from the source but is further away by the
+  // probe radius.
+  Point absoluteDotLocation = sourceAtom.data->xyz + dotOffset;
+  Point probLoc = sourceAtom.data->xyz + dotOffset.normalize() * (dotOffset.length() + probeRadius);
+
+  bool isHydrogenBond = false;          ///< Are we looking at a hydrogen bond to our neighbor?
+  bool tooCloseHydrogenBond = false;    ///< Are we too close to be a hydrogen bond?
+  double hydrogenBondMinDist = 0;       ///< Hydrogen bond minimum distance based on the atom types (will be set below).
+  bool keepDot = false;                 ///< Did we find a neighbor and we're not in a bonded atom?
+
+  // Look through each atom to find the one with the smallest gap, which is the one that
+  // the dot would interact with.
+  for (iotbx::pdb::hierarchy::atom const& b : interacting) {
+    ExtraAtomInfo const& bExtra = m_extraInfo[b.data->i_seq];
+    Point locb = b.data->xyz;
+    double vdwb = bExtra.getVdwRadius();
+
+    // See if we are too far away to interact, bail if so.
+    double squareProbeDist = (probLoc - locb).length_sq();
+    double pRadPlusVdwb = vdwb + probeRadius;
+    if (squareProbeDist > pRadPlusVdwb * pRadPlusVdwb) {
+      continue;
+    }
+
+    // At this point, we are within the probe radius past the edge, so we're in contention
+    // to be the nearest atom.  Find the distance from the dot rather than from the probe
+    // to check our actual interaction behavior.
+    double dist = (absoluteDotLocation - locb).length();
+    double gap = dist - vdwb;
+
+    // See if we replace the currently-closest atom.
+    if (gap < ret.gap) {
+
+      // Figure out what kind of interaction this is based on the atom types and
+      // charge status of the two atoms.
+      int chargeSource = atom_charge(sourceAtom);
+      int chargeB = atom_charge(b);
+
+      bool bothCharged = (chargeSource != 0) && (chargeB != 0);
+      bool chargeComplement = bothCharged && (chargeSource * chargeB < 0);
+
+      // See if one of the atoms is a hydrogen donor and the other can accept hydrogen bonds.
+      bool couldHBond = (sourceExtra.getIsDonor() && bExtra.getIsAcceptor())
+        || (sourceExtra.getIsAcceptor() && bExtra.getIsDonor());
+      if (couldHBond && ((!bothCharged) || chargeComplement)) {
+        isHydrogenBond = true;
+        hydrogenBondMinDist = bothCharged ? m_maxChargedHydrogenOverlap : m_maxRegularHydrogenOverlap;
+        tooCloseHydrogenBond = (gap < -hydrogenBondMinDist);
+      }
+      else {
+        // If this is a dummy hydrogen, then we skip it, it can only be a hydrogen-bond partner
+        if (bExtra.getIsDummyHydrogen()) { continue; }
+        // This is not a hydrogen bond.
+        isHydrogenBond = tooCloseHydrogenBond = false;
+      }
+
+      // Record which atom is the closest and mark the dot to be kept because we found an
+      // atom that is close enough.
+      ret.cause = b;
+      keepDot = true;
+      ret.gap = gap;
+    }
+  }
+
+  // If the dot was close enough to some non-bonded atom, check to see if it should be removed
+  // from consideration because it is also inside an excluded atom.
+  if (keepDot) {
+    for (iotbx::pdb::hierarchy::atom const& e : exclude) {
+      double vdwe = m_extraInfo[e.data->i_seq].getVdwRadius();
+      if ((absoluteDotLocation - e.data->xyz).length_sq() < vdwe * vdwe) {
+        keepDot = false;
+        break;
+      }
+    }
+  }
+
+  // If this dot is a keeper, fill in non-default return values.
+  if (keepDot) {
+    // Determine the overlap type and amount of overlap.
+    if (ret.gap >= 0) {
+      ret.overlap = 0;
+      ret.overlapType = 0;
+    } else if (isHydrogenBond) {
+      ret.overlap = -0.5 * ret.gap;
+      if (tooCloseHydrogenBond) {
+        ret.gap += hydrogenBondMinDist;
+        ret.overlapType = -1;
+      } else {
+        ret.overlapType = 1;
+      }
+    } else {  // ret.gap < 0 and not a hydrogen bond
+      ret.overlap = -0.5 * ret.gap;
+      ret.overlapType = -1;
+    }
+
+    /// @todo We may be able to speed things up by only computing this for contact dots
+    ret.annular = annularDots(absoluteDotLocation, sourceAtom.data->xyz, sourceExtra.getVdwRadius(),
+      ret.cause.data->xyz, m_extraInfo[ret.cause.data->i_seq].getVdwRadius(), probeRadius);
+  }
+ 
+  return ret;
+}
+
+DotScorer::ScoreDotsResult DotScorer::score_dots(
   iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,
   SpatialQuery &spatialQuery, double nearbyRadius, double probeRadius,
   scitbx::af::shared<iotbx::pdb::hierarchy::atom> const &exclude,
@@ -138,140 +251,42 @@ AtomVsAtomDotScorer::ScoreDotsResult AtomVsAtomDotScorer::score_dots(
 
   // Run through all of the dots and determine whether and how to score each.
   for (Point const& d : dots) {
-    // Find the world-space location of the dot by adding it to the location of the source atom.
-    // The probe location is in the same direction as d from the source but is further away by the
-    // probe radius.
-    Point absoluteDotLocation = sourceAtom.data->xyz + d;
-    Point probLoc = sourceAtom.data->xyz + d.normalize() * (d.length() + probeRadius);
-
-    double minGap = 1e10;                 ///< Nearest atom that we found
-    bool isHydrogenBond = false;          ///< Are we looking at a hydrogen bond to our neighbor?
-    bool tooCloseHydrogenBond = false;    ///< Are we too close to be a hydrogen bond?
-    double hydrogenBondMinDist = 0;       ///< Hydrogen bond minimum distance based on the atom types (will be set below).
-    bool keepDot = false;                 ///< Did we find a neighbor and we're not in a bonded atom?
-
-    iotbx::pdb::hierarchy::atom const *cause = nullptr;
-
-    // Look through each atom to find the one with the smallest gap, which is the one that
-    // the dot would interact with.
-    for (iotbx::pdb::hierarchy::atom const& b : interacting) {
-      ExtraAtomInfo const& bExtra = m_extraInfo[b.data->i_seq];
-      Point locb = b.data->xyz;
-      double vdwb = bExtra.getVdwRadius();
-
-      // See if we are too far away to interact, bail if so.
-      double squareProbeDist = (probLoc - locb).length_sq();
-      double pRadPlusVdwb = vdwb + probeRadius;
-      if (squareProbeDist > pRadPlusVdwb * pRadPlusVdwb) {
-        continue;
-      }
-
-      // At this point, we are within the probe radius past the edge, so we're in contention
-      // to be the nearest atom.  Find the distance from the dot rather than from the probe
-      // to check our actual interaction behavior.
-      double dist = (absoluteDotLocation - locb).length();
-      double gap = dist - vdwb;
-
-      // See if we replace the currently-closest atom.
-      if (gap < minGap) {
-
-        // Figure out what kind of interaction this is based on the atom types and
-        // charge status of the two atoms.
-        int chargeSource = atom_charge(sourceAtom);
-        int chargeB = atom_charge(b);
-
-        bool bothCharged = (chargeSource != 0) && (chargeB != 0);
-        bool chargeComplement = bothCharged && (chargeSource * chargeB < 0);
-
-        // See if one of the atoms is a hydrogen donor and the other can accept hydrogen bonds.
-        bool couldHBond = (sourceExtra.getIsDonor() && bExtra.getIsAcceptor())
-                       || (sourceExtra.getIsAcceptor() && bExtra.getIsDonor());
-        if (couldHBond && ((!bothCharged) || chargeComplement)) {
-          isHydrogenBond = true;
-          hydrogenBondMinDist = bothCharged ? m_maxChargedHydrogenOverlap : m_maxRegularHydrogenOverlap;
-          tooCloseHydrogenBond = (gap < -hydrogenBondMinDist);
-        } else {
-          // If this is a dummy hydrogen, then we skip it, it can only be a hydrogen-bond partner
-          if (bExtra.getIsDummyHydrogen()) { continue; }
-          // This is not a hydrogen bond.
-          isHydrogenBond = tooCloseHydrogenBond = false;
-        }
-
-        // Record which atom is the closest and mark the dot to be kept because we found an
-        // atom that is close enough.
-        cause = &b;
-        keepDot = true;
-        minGap = gap;
-      }
-    }
-
-    // If the dot was close enough to some non-bonded atom, check to see if it should be removed
-    // from consideration because it is also inside an excluded atom.
-    if (keepDot) {
-      for (iotbx::pdb::hierarchy::atom const& e : exclude) {
-        double vdwe = m_extraInfo[e.data->i_seq].getVdwRadius();
-        if ((absoluteDotLocation - e.data->xyz).length_sq() < vdwe * vdwe) {
-          keepDot = false;
-          break;
-        }
-      }
-    }
-    if (!keepDot) { continue; }
-
-    // We've gotten this far, so we score the dot and add it to the relevant subscore.
-    int overlapType = 0;
-    double overlap = 0;
-
-    // Determine the overlap type and amount of overlap.
-    if (minGap >= 0) {
-      overlap = 0;
-      overlapType = 0;
-    } else if (isHydrogenBond) {
-      overlap = -0.5 * minGap;
-      if (tooCloseHydrogenBond) {
-        minGap += hydrogenBondMinDist;
-        overlapType = -1;
-      } else {
-        overlapType = 1;
-      }
-    } else {  // minGap < 0 and not a hydrogen bond
-      overlap = -0.5 * minGap;
-      overlapType = -1;
-    }
+    CheckDotResult score = check_dot(sourceAtom, sourceExtra, d, probeRadius, interacting, exclude);
 
     // Compute the score for the dot based on the overlap type and amount of overlap.
     // Assign it to the appropriate subscore.
     double dotScore = 0;
-    switch (overlapType) {
+    switch (score.overlapType) {
+
+    case -2: // No interaction
+      break;
 
     case -1:  // Clash
-      ret.bumpSubScore += -m_bumpWeight * overlap;
+      ret.bumpSubScore += -m_bumpWeight * score.overlap;
       // See if we should flag this atom as having a bad bump
-      if (minGap < -m_badBumpOverlap) {
+      if (score.gap < -m_badBumpOverlap) {
         ret.hasBadBump = true;
       }
       break;
 
     case 0:   // Contact dot
-      if ((!onlyBumps) && !annularDots(absoluteDotLocation, sourceAtom.data->xyz, sourceExtra.getVdwRadius(),
-          cause->data->xyz, m_extraInfo[cause->data->i_seq].getVdwRadius(), probeRadius)) {
-
-        double scaledGap = minGap / m_gapScale;
+      if ((!onlyBumps) && !score.annular) {
+        double scaledGap = score.gap / m_gapScale;
         ret.attractSubScore += exp(-scaledGap * scaledGap);
       }
       break;
 
     case 1:   // Hydrogen bond
       if (!onlyBumps) {
-        ret.hBondSubScore += m_hBondWeight * overlap;
+        ret.hBondSubScore += m_hBondWeight * score.overlap;
       } else {  // In this case, we treat it as a bump
-        ret.bumpSubScore += -m_bumpWeight * overlap;
+        ret.bumpSubScore += -m_bumpWeight * score.overlap;
       }
       break;
       
     default:
       // This should never happen.  Returns with ret invalid to indicate an error.
-      std::cerr << "AtomVsAtomDotScorer::score_dots(): Internal error: Unrecognized overlap type: " << overlapType << std::endl;
+      std::cerr << "DotScorer::score_dots(): Internal error: Unrecognized overlap type: " << score.overlapType << std::endl;
       return ret;
     }
   }
@@ -305,7 +320,7 @@ public:
   bool isDummyHydrogen;
 };
 
-std::string AtomVsAtomDotScorer::test()
+std::string DotScorer::test()
 {
   // Construct test cases with all combinations of charges and extra information, holding the
   // radii of the neighbor atom and probe atom constant.  Do this in combination with adding or
@@ -357,7 +372,7 @@ std::string AtomVsAtomDotScorer::test()
              infos.push_back(se);
 
              // Construct the scorer to be used.
-             AtomVsAtomDotScorer as(infos);
+             DotScorer as(infos);
 
              // Determine our hydrogen-bond state
              bool compatibleCharge = atom_charge(source) * atom_charge(a) <= 0;
@@ -383,10 +398,10 @@ std::string AtomVsAtomDotScorer::test()
                 ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                   probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                 if (!res.valid) {
-                  return "AtomVsAtomDotScorer::test(): Could not score dots for excluded-atom case";
+                  return "DotScorer::test(): Could not score dots for excluded-atom case";
                 }
                 if ((res.totalScore() != 0) || res.hasBadBump) {
-                  return "AtomVsAtomDotScorer::test(): Got unexpected result for excluded-atom case";
+                  return "DotScorer::test(): Got unexpected result for excluded-atom case";
                 }
 
                 // Skip the rest of the tests for this case.
@@ -402,10 +417,10 @@ std::string AtomVsAtomDotScorer::test()
                  ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                    probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                  if (!res.valid) {
-                   return "AtomVsAtomDotScorer::test(): Could not score dots for dummy hydrogen case";
+                   return "DotScorer::test(): Could not score dots for dummy hydrogen case";
                  }
                  if ((res.bumpSubScore != 0) || res.hasBadBump) {
-                   return "AtomVsAtomDotScorer::test(): Got unexpected result for dummy hydrogen case";
+                   return "DotScorer::test(): Got unexpected result for dummy hydrogen case";
                  }
                  // Skip the rest of the tests for this case.
                  continue;
@@ -419,10 +434,10 @@ std::string AtomVsAtomDotScorer::test()
                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                  probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                if (!res.valid) {
-                 return "AtomVsAtomDotScorer::test(): Could not score dots for bad-bump case";
+                 return "DotScorer::test(): Could not score dots for bad-bump case";
                }
                if (!res.hasBadBump) {
-                 return "AtomVsAtomDotScorer::test(): Got no bad bump for bad-bump case case";
+                 return "DotScorer::test(): Got no bad bump for bad-bump case case";
                }
              }
 
@@ -433,15 +448,15 @@ std::string AtomVsAtomDotScorer::test()
                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                  probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                if (!res.valid) {
-                 return "AtomVsAtomDotScorer::test(): Could not score dots for bump-only test case";
+                 return "DotScorer::test(): Could not score dots for bump-only test case";
                }
                if (onlyBumps) {
                  if (res.totalScore() != 0) {
-                   return "AtomVsAtomDotScorer::test(): Got value when not expected for bump-only test case";
+                   return "DotScorer::test(): Got value when not expected for bump-only test case";
                  }
                } else {
                  if (res.totalScore() == 0) {
-                   return "AtomVsAtomDotScorer::test(): Got no value when one expected for non-bump-only test case";
+                   return "DotScorer::test(): Got no value when one expected for non-bump-only test case";
                  }
                }
              }
@@ -452,13 +467,13 @@ std::string AtomVsAtomDotScorer::test()
                ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
                  probeRad, exclude, ds.dots(), ds.density(), onlyBumps);
                if (!res.valid) {
-                 return "AtomVsAtomDotScorer::test(): Could not score dots for bump-only hydrogen-bond test case";
+                 return "DotScorer::test(): Could not score dots for bump-only hydrogen-bond test case";
                }
                if (res.hBondSubScore != 0) {
-                 return "AtomVsAtomDotScorer::test(): Got unexpected hydrogen bond score for bump-only test case";
+                 return "DotScorer::test(): Got unexpected hydrogen bond score for bump-only test case";
                }
                if (res.bumpSubScore >= 0) {
-                 return "AtomVsAtomDotScorer::test(): Got unexpected bump score for bump-only test case";
+                 return "DotScorer::test(): Got unexpected bump score for bump-only test case";
                }
              }
 
@@ -505,7 +520,7 @@ std::string AtomVsAtomDotScorer::test()
     scitbx::af::shared<iotbx::pdb::hierarchy::atom> exclude;
 
     // Construct the scorer to be used.
-    AtomVsAtomDotScorer as(infos);
+    DotScorer as(infos);
 
     // Sweep the source atom
     double lastAttract = 1e10;
@@ -515,19 +530,19 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for swept-distance case";
+        return "DotScorer::test(): Could not score dots for swept-distance case";
       }
       if ((res.attractSubScore != res.totalScore()) || (res.attractSubScore > lastAttract)) {
-        return "AtomVsAtomDotScorer::test(): Non-monotonic scores for swept-distance case";
+        return "DotScorer::test(): Non-monotonic scores for swept-distance case";
       }
       lastAttract = res.attractSubScore;
       if (lastAttract != 0) { foundNonzero = true; }
     }
     if (!foundNonzero) {
-      return "AtomVsAtomDotScorer::test(): No nonzero scores for swept-distance case";
+      return "DotScorer::test(): No nonzero scores for swept-distance case";
     }
     if (lastAttract != 0) {
-      return "AtomVsAtomDotScorer::test(): Non-empty last score for swept-distance case";
+      return "DotScorer::test(): Non-empty last score for swept-distance case";
     }
   }
 
@@ -588,13 +603,13 @@ std::string AtomVsAtomDotScorer::test()
         for (double wBond = 0.25; wBond < 10; wBond += 3) {
 
           // Construct the scorer to be used.
-          AtomVsAtomDotScorer as(infos,wGap, wBump, wBond);
+          DotScorer as(infos,wGap, wBump, wBond);
 
           // Get the dot results and store all of the params and results in a vector
           ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
             probeRad, exclude, ds.dots(), ds.density());
           if (!res.valid) {
-            return "AtomVsAtomDotScorer::test(): Could not score dots for weight scaling cases";
+            return "DotScorer::test(): Could not score dots for weight scaling cases";
           }
           std::vector<double> row = { wGap, wBump, wBond, res.attractSubScore, res.bumpSubScore, res.hBondSubScore };
           results.push_back(row);
@@ -610,7 +625,7 @@ std::string AtomVsAtomDotScorer::test()
       bool paramClose = closeTo(1, results[0][0] / results[i][0]);
       bool resultClose = closeTo(1, results[0][3 + 0] / results[i][3 + 0]);
       if (paramClose != resultClose) {
-        return "AtomVsAtomDotScorer::test(): Inconsistent gap ratio for weight scaling case";
+        return "DotScorer::test(): Inconsistent gap ratio for weight scaling case";
       }
 
       // Check the other two scores for linearity.
@@ -618,7 +633,7 @@ std::string AtomVsAtomDotScorer::test()
         double paramRatio = results[0][j] / results[i][j];
         double resultRatio = results[0][3 + j] / results[i][3 + j];
         if (!closeTo(paramRatio, resultRatio)) {
-          return "AtomVsAtomDotScorer::test(): Unequal ratio for weight scaling case";
+          return "DotScorer::test(): Unequal ratio for weight scaling case";
         }
       }
     }
@@ -666,27 +681,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
+      DotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for badOverlap setting case";
+        return "DotScorer::test(): Could not score dots for badOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for badOverlap setting case";
+        return "DotScorer::test(): Bad bump found when not expected for badOverlap setting case";
       }
 
       source.set_xyz({ targetRad + sourceRad - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for badOverlap setting case";
+        return "DotScorer::test(): Could not score dots for badOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for badOverlap setting case";
+        return "DotScorer::test(): Bad bump not found when expected for badOverlap setting case";
       }
     }
 
@@ -703,27 +718,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
+      DotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
+        return "DotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for maxRegularHydrogenOverlap setting case";
+        return "DotScorer::test(): Bad bump found when not expected for maxRegularHydrogenOverlap setting case";
       }
 
       source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
+        return "DotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for maxRegularHydrogenOverlap setting case";
+        return "DotScorer::test(): Bad bump not found when expected for maxRegularHydrogenOverlap setting case";
       }
     }
 
@@ -741,27 +756,27 @@ std::string AtomVsAtomDotScorer::test()
       ScoreDotsResult res;
 
       // Construct the scorer to be used with the specified bond gaps.
-      AtomVsAtomDotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
+      DotScorer as(infos, 0.25, 10.0, 4.0, maxRegularHydrogenOverlap, maxChargedHydrogenOverlap, badOverlap);
 
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
+        return "DotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
       if (res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump found when not expected for maxChargedHydrogenOverlap setting case";
+        return "DotScorer::test(): Bad bump found when not expected for maxChargedHydrogenOverlap setting case";
       }
 
       source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
+        return "DotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
       if (!res.hasBadBump) {
-        return "AtomVsAtomDotScorer::test(): Bad bump not found when expected for maxChargedHydrogenOverlap setting case";
+        return "DotScorer::test(): Bad bump not found when expected for maxChargedHydrogenOverlap setting case";
       }
     }
   }
@@ -800,7 +815,7 @@ std::string AtomVsAtomDotScorer::test()
     ScoreDotsResult res;
 
     // Construct the scorer to be used with the specified bond gaps.
-    AtomVsAtomDotScorer as(infos);
+    DotScorer as(infos);
 
     // Check the source atom just overlapping with the target.
     source.set_xyz({ targetRad + sourceRad - 0.1, 0, 0 });
@@ -812,11 +827,11 @@ std::string AtomVsAtomDotScorer::test()
       res = as.score_dots(source, occupancies[i], sq, sourceRad + targetRad,
         probeRad, exclude, ds.dots(), ds.density());
       if (!res.valid) {
-        return "AtomVsAtomDotScorer::test(): Could not score dots for occupancy test case";
+        return "DotScorer::test(): Could not score dots for occupancy test case";
       }
       bool zero = res.totalScore() == 0;
       if (zero != expectZero[i]) {
-        return "AtomVsAtomDotScorer::test(): Unexpected zero state for occupancy test case";
+        return "DotScorer::test(): Unexpected zero state for occupancy test case";
       }
     }
   }
@@ -853,7 +868,7 @@ std::string AtomVsAtomDotScorer::test()
     ScoreDotsResult res;
 
     // Construct the scorer to be used with the specified bond gaps.
-    AtomVsAtomDotScorer as(infos);
+    DotScorer as(infos);
 
     // Check the source atom just overlapping with the target.
     source.set_xyz({ targetRad + sourceRad - 0.1, 0, 0 });
@@ -861,12 +876,12 @@ std::string AtomVsAtomDotScorer::test()
     res = as.score_dots(source, 1, sq, sourceRad + targetRad,
       -0.1, exclude, ds.dots(), ds.density());
     if (res.valid) {
-      return "AtomVsAtomDotScorer::test(): Unexpected valid result for probeRadius < 0 case";
+      return "DotScorer::test(): Unexpected valid result for probeRadius < 0 case";
     }
     res = as.score_dots(source, 1, sq, sourceRad + targetRad,
       probeRad, exclude, ds.dots(), 0);
     if (res.valid) {
-      return "AtomVsAtomDotScorer::test(): Unexpected valid result for density <= 0 case";
+      return "DotScorer::test(): Unexpected valid result for density <= 0 case";
     }
   }
 
@@ -890,10 +905,10 @@ std::string Scoring_test()
   }
 
 
-  // Test the AtomVsAtomDotScorer class
-  ret = AtomVsAtomDotScorer::test();
+  // Test the DotScorer class
+  ret = DotScorer::test();
   if (ret.size() > 0) {
-    return std::string("Scoring_test: AtomVsAtomDotScorer failed: ") + ret;
+    return std::string("Scoring_test: DotScorer failed: ") + ret;
   }
 
   // Test that the distance from a location to itself is negative radius, and that
