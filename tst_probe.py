@@ -8,7 +8,7 @@ from iotbx.map_model_manager import map_model_manager
 from iotbx.data_manager import DataManager
 import mmtbx
 
-def RunProbeTests():
+def RunProbeTests(inFileName):
 
   #========================================================================
   # Make sure we can get at the DotSphere objects and their methods
@@ -22,14 +22,22 @@ def RunProbeTests():
   #========================================================================
   # Make sure we can fill in an ExtraAtomInfoList and pass it to scoring
   # Generate an example data model with a small molecule in it
-  print('Filling in extra atom information needed for probe score')
-  mmm=map_model_manager()         #   get an initialized instance of the map_model_manager
-  mmm.generate_map()              #   get a model from a generated small library model and calculate a map for it
-  model = mmm.model()             #   get the model
+  print('Generating model')
+  if inFileName is not None and len(inFileName) > 0:
+    # Read a model from a file using the DataManager
+    dm = DataManager()
+    dm.process_model_file(inFileName)
+    model = dm.get_model(inFileName)
+  else:
+    # Generate a small-molecule model using the map model manager
+    mmm=map_model_manager()         #   get an initialized instance of the map_model_manager
+    mmm.generate_map()              #   get a model from a generated small library model and calculate a map for it
+    model = mmm.model()             #   get the model
 
   # Fill in an ExtraAtomInfoList with an entry for each atom in the hierarchy.
   # We first find the largest i_seq sequence number in the model and reserve that
   # many entries so we will always be able to fill in the entry for an atom.
+  print('Filling in extra atom information needed for probe score')
   atoms = model.get_atoms()
   maxI = atoms[0].i_seq
   for a in atoms:
@@ -63,13 +71,28 @@ def RunProbeTests():
             if hb_type == "D":
               extra[a.i_seq].isDonor = True
 
-  # Construct a SpatialQuery and fill in the atoms.
+  # Construct a SpatialQuery and fill in the atoms.  Ensure that we can make a
+  # query within 1000 Angstroms of the origin.
   sq = probe.SpatialQuery(atoms)
   nb = sq.neighbors((0,0,0), 0, 1000)
   #print('XXX',nb)
   #print('XXX Found this many neighbors: ', len(nb))
 
-  # Construct the other objects needed for Scoring.
+  # Construct a DotScorer object.
+  # Find the radius of each atom in the structure and construct dot spheres for
+  # them. Find the atoms that are bonded to them and add them to an excluded list.
+  # Then compute the score for each of them and report the summed score over the
+  # whole molecule.
+  ds = DotScorer(extra)
+  total = 0
+  for a in atoms:
+    rad = extra[a.i_seq].vdwRadius
+    dots = cache.get_sphere(rad)
+    exclude = []
+    # @todo Fill in bonded atoms
+    res = ds.score_dots(a, 1.0, sq, 0.0001, rad*3, 0.25, exclude, dots, dots.density())
+    total += res.totalScore()
+  print('Summed probe score for molecule =',total)
 
   # @todo
 
@@ -100,7 +123,7 @@ if __name__ == '__main__':
   for i in range(1,len(sys.argv)):
     fileName = sys.argv[i]
 
-  ret = RunProbeTests()
+  ret = RunProbeTests(fileName)
   if len(ret) == 0:
     print('Success!')
 
