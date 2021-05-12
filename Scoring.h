@@ -65,7 +65,11 @@ namespace molprobity {
 
     //=====================================================================================================
     /// @brief Class to hold data values for an atom beyond those present in the hierarchy::atom class itself
-    // that are needed by the Probe calculations.
+    // that are needed by the Probe calculations.  These must be filled in by the client, perhaps using data
+    // from the mmtbx.monomer_library.server.ener_lib() function to get a library and looking things up
+    // in it based on getting a monomer lib query mon_lib_query() from reduce_hydrogen, then calling its
+    // atom_dict() method and then looking up the atom by name in that dictionary to get its type_energy
+    // value.
 
     class ExtraAtomInfo {
     public:
@@ -167,7 +171,8 @@ namespace molprobity {
       ///             set).
       /// @param [in] probeRadius Radius of the probe rolled between the two potentially-contacting atoms
       ///             If this is < 0, an invalid result will be returned.
-      /// @param [in] excluded Atoms that are to be excluded from contact.
+      /// @param [in] excluded Atoms that are to be excluded from contact, for example this could be a list
+      ///             of atoms bonded to sourceAtom.
       /// @param [in] dots Vector of dots to compare.  Each is added to the sourceAtom origin.
       /// @param [in] density Density of the dots on the probe sphere, used to normalize results.
       ///             If this is <= 0, an invalid result will be returned.

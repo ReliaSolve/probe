@@ -181,6 +181,7 @@ static pointSet COdots; /* adjustible radius dots for C=O carbon */
 /*Old: 5 running sum which can be tested for existance of any of these spikes*/
 /* New 04/15/2015 SJ: 0 wide contact,1 close contact,2 weak H bonds, 3 small overlap, 4 bad overlap, 5 worse overlap, 6 H-bonds*/
 /* changing the size of the array to 8*/
+/* mc = main chain, sc = side chain. */
 static long mcmccont[2][8] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*dcr041017,dcr041020, SJ 04/15/2015*/
 static long scsccont[2][8] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*dcr041017,dcr041020, SJ 04/15/2015*/
 static long mcsccont[2][8] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /*dcr041017,dcr041020, SJ 04/15/2015*/
@@ -3805,7 +3806,7 @@ void examineDots(atom *src, int type, atom *scratch,
 
          else if(    DoWatWat == FALSE
                   && ( src->props & WATER_PROP)
-                  && (targ->props & WATER_PROP))  /// @todo Should be ||, skip if either atom is a water?
+                  && (targ->props & WATER_PROP))
          {
             ; /* water will not contribute when not being considered*/
          }
@@ -3966,7 +3967,7 @@ void examineDots(atom *src, int type, atom *scratch,
 
          /*NOTE: atomHOd : hb-only-dummy, phantom H atom*/
          /* ovrlaptype : -1 bump, 0 touch, +1 H bond */
-         if(  (ovrlaptype == 1)/* TODO: SJ Have to figue out what will happen here is LweakHbonds is true*/
+         if(  (ovrlaptype == 1)/* TODO: SJ Have to figure out what will happen here if LweakHbonds is true*/
             ||(src->elem != atomHOd && cause->elem != atomHOd) )
          {
            v3scale(&dotvect, src->radius + sl);
