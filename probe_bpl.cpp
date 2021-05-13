@@ -2,6 +2,7 @@
 #define BOOST_PYTHON_MAX_ARITY 20
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <scitbx/boost_python/container_conversions.h>
 #include "DotSpheres.h"
 #include "SpatialQuery.h"
 #include "Scoring.h"
@@ -24,7 +25,7 @@ boost::python::tuple wrap_vec3_array(Point const& d) {
 BOOST_PYTHON_MODULE(mmtbx_probe_ext)
 {
   // Describe and name compound classes that we need access to beyond those that are
-  // already defined for us by scitbx and array.
+  // already defined for us by scitbx arrays that are defined elsewhere.
 
   class_<ContactResult>("ContactResult", init<>())
     .add_property("closestContact", &ContactResult::closestContact)
@@ -37,6 +38,9 @@ BOOST_PYTHON_MODULE(mmtbx_probe_ext)
     .add_property("isDonor", &ExtraAtomInfo::getIsDonor, &ExtraAtomInfo::setIsDonor)
     .add_property("isDummyHydrogen", &ExtraAtomInfo::getIsDummyHydrogen, &ExtraAtomInfo::setIsDummyHydrogen)
     ;
+  // Define the flex array wrapping for this class because we take it as a parameter.
+  scitbx::boost_python::container_conversions::tuple_mapping_variable_capacity<
+    scitbx::af::shared<ExtraAtomInfo> >();
 
   enum_<DotScorer::InteractionType>("InteractionType")
     .value("None", DotScorer::InteractionType::None)
