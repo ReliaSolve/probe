@@ -75,24 +75,27 @@ def RunProbeTests(inFileName):
   # query within 1000 Angstroms of the origin.
   sq = probe.SpatialQuery(atoms)
   nb = sq.neighbors((0,0,0), 0, 1000)
-  print('Found this many neighbors:', len(nb))
+  print('Found this many atoms within 1000A of the origin:', len(nb))
 
   # Construct a DotScorer object.
   # Find the radius of each atom in the structure and construct dot spheres for
   # them. Find the atoms that are bonded to them and add them to an excluded list.
   # Then compute the score for each of them and report the summed score over the
-  # whole molecule.
+  # whole molecule the way that Reduce will.
   ds = probe.DotScorer(extra)
   total = 0
+  badBumpTotal = 0
   for a in atoms:
     rad = extra[a.i_seq].vdwRadius
     sphere = cache.get_sphere(rad)
-    exclude = []
     # @todo Fill in bonded atoms
+    exclude = []
     dots = sphere.dots()
     res = ds.score_dots(a, 1.0, sq, rad*3, 0.25, exclude, sphere.dots(), sphere.density(), False)
     total += res.totalScore()
-  print('Summed probe score for molecule =',total)
+    if res.hasBadBump:
+      badBumpTotal += 1
+  print('Summed probe score for molecule =',total,'with',badBumpTotal,'bad bumps')
 
   # @todo
 
