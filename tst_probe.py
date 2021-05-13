@@ -47,6 +47,23 @@ def RunProbeTests(inFileName):
   for i in range(maxI+1):
     extra.append(probe.ExtraAtomInfo())
 
+  # Get the bonding information we'll need to exclude our bonded neighbors
+  p = mmtbx.model.manager.get_default_pdb_interpretation_params()
+  model.set_pdb_interpretation_params(params = p)
+  model.process_input_model(make_restraints=True) # make restraints
+  geometry = model.get_restraints_manager().geometry
+  sites_cart = model.get_sites_cart() # cartesian coordinates
+  bond_proxies_simple, asu = \
+      geometry.get_all_bond_proxies(sites_cart = sites_cart)
+
+  # Make a mapping from sequence number to atom so that we can quickly look this
+  # up when finding bonded neighbors
+  # @todo There may be a faster way to find bonded neighbors that does not require
+  # this.
+  atomDict = {}
+  for a in atoms:
+    atomDict[a.i_seq] = a
+
   # Traverse the hierarchy and look up the extra data to be filled in.
   # Get a list of all the atoms in the chain while we're at it
   atoms = []
@@ -88,8 +105,17 @@ def RunProbeTests(inFileName):
   for a in atoms:
     rad = extra[a.i_seq].vdwRadius
     sphere = cache.get_sphere(rad)
-    # @todo Fill in bonded atoms
+
+    # Excluded atoms that are bonded to me
     exclude = []
+    me = a.i_seq
+    for bp in bond_proxies_simple:
+      atoms = bp.i_seqs
+      if me == atoms[0]:
+        exclude.append(atomDict[atoms[1]])
+      if me == atoms[1]:
+        exclude.append(atomDict[atoms[0]])
+
     dots = sphere.dots()
     res = ds.score_dots(a, 1.0, sq, rad*3, 0.25, exclude, sphere.dots(), sphere.density(), False)
     total += res.totalScore()
