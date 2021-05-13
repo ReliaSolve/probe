@@ -75,8 +75,7 @@ def RunProbeTests(inFileName):
   # query within 1000 Angstroms of the origin.
   sq = probe.SpatialQuery(atoms)
   nb = sq.neighbors((0,0,0), 0, 1000)
-  #print('XXX',nb)
-  #print('XXX Found this many neighbors: ', len(nb))
+  print('Found this many neighbors:', len(nb))
 
   # Construct a DotScorer object.
   # Find the radius of each atom in the structure and construct dot spheres for
@@ -87,10 +86,11 @@ def RunProbeTests(inFileName):
   total = 0
   for a in atoms:
     rad = extra[a.i_seq].vdwRadius
-    dots = cache.get_sphere(rad)
+    sphere = cache.get_sphere(rad)
     exclude = []
     # @todo Fill in bonded atoms
-    res = ds.score_dots(a, 1.0, sq, 0.0001, rad*3, 0.25, exclude, dots, dots.density())
+    dots = sphere.dots()
+    res = ds.score_dots(a, 1.0, sq, rad*3, 0.25, exclude, sphere.dots(), sphere.density(), False)
     total += res.totalScore()
   print('Summed probe score for molecule =',total)
 

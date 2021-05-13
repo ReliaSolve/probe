@@ -531,7 +531,7 @@ std::string DotScorer::test()
     for (double gap = 0; gap < 10; gap += 0.1) {
       source.set_xyz({ targetRad + sourceRad + gap, 0, 0 });
       ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for swept-distance case";
       }
@@ -610,7 +610,7 @@ std::string DotScorer::test()
 
           // Get the dot results and store all of the params and results in a vector
           ScoreDotsResult res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-            probeRad, exclude, ds.dots(), ds.density());
+            probeRad, exclude, ds.dots(), ds.density(), false);
           if (!res.valid) {
             return "DotScorer::test(): Could not score dots for weight scaling cases";
           }
@@ -689,7 +689,7 @@ std::string DotScorer::test()
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for badOverlap setting case";
       }
@@ -699,7 +699,7 @@ std::string DotScorer::test()
 
       source.set_xyz({ targetRad + sourceRad - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for badOverlap setting case";
       }
@@ -726,7 +726,7 @@ std::string DotScorer::test()
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
@@ -736,7 +736,7 @@ std::string DotScorer::test()
 
       source.set_xyz({ targetRad + sourceRad - maxRegularHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for maxRegularHydrogenOverlap setting case";
       }
@@ -764,7 +764,7 @@ std::string DotScorer::test()
       // Check the source atom against outside and inside the gap
       source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap + 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
@@ -774,7 +774,7 @@ std::string DotScorer::test()
 
       source.set_xyz({ targetRad + sourceRad - maxChargedHydrogenOverlap - badOverlap - 0.1, 0, 0 });
       res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for maxChargedHydrogenOverlap setting case";
       }
@@ -828,7 +828,7 @@ std::string DotScorer::test()
     std::vector<bool> expectZero = { true, true, true, false, false };
     for (size_t i = 0; i < occupancies.size(); i++) {
       res = as.score_dots(source, occupancies[i], sq, sourceRad + targetRad,
-        probeRad, exclude, ds.dots(), ds.density());
+        probeRad, exclude, ds.dots(), ds.density(), false);
       if (!res.valid) {
         return "DotScorer::test(): Could not score dots for occupancy test case";
       }
@@ -877,12 +877,12 @@ std::string DotScorer::test()
     source.set_xyz({ targetRad + sourceRad - 0.1, 0, 0 });
 
     res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-      -0.1, exclude, ds.dots(), ds.density());
+      -0.1, exclude, ds.dots(), ds.density(), false);
     if (res.valid) {
       return "DotScorer::test(): Unexpected valid result for probeRadius < 0 case";
     }
     res = as.score_dots(source, 1, sq, sourceRad + targetRad,
-      probeRad, exclude, ds.dots(), 0);
+      probeRad, exclude, ds.dots(), 0, false);
     if (res.valid) {
       return "DotScorer::test(): Unexpected valid result for density <= 0 case";
     }
