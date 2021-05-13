@@ -64,6 +64,14 @@ def RunProbeTests(inFileName):
   for a in atoms:
     atomDict[a.i_seq] = a
 
+  # Make a dictionary for each atom listing all of its bonded neighbors
+  bondedNeighbors = {}
+  for a in atoms:
+    bondedNeighbors[a] = []
+  for bp in bond_proxies_simple:
+    bondedNeighbors[atomDict[bp.i_seqs[0]]].append(atomDict[bp.i_seqs[1]])
+    bondedNeighbors[atomDict[bp.i_seqs[1]]].append(atomDict[bp.i_seqs[0]])
+
   # Traverse the hierarchy and look up the extra data to be filled in.
   # Get a list of all the atoms in the chain while we're at it
   atoms = []
@@ -106,15 +114,15 @@ def RunProbeTests(inFileName):
     rad = extra[a.i_seq].vdwRadius
     sphere = cache.get_sphere(rad)
 
-    # Excluded atoms that are bonded to me
-    exclude = []
-    me = a.i_seq
-    for bp in bond_proxies_simple:
-      atoms = bp.i_seqs
-      if me == atoms[0]:
-        exclude.append(atomDict[atoms[1]])
-      if me == atoms[1]:
-        exclude.append(atomDict[atoms[0]])
+    # Excluded atoms that are bonded to me or to one of my neightbors.
+    # It has the side effect of excluding myself if I have any neighbors.
+    # Construct as a set to avoid duplicates.
+    exclude = set()
+    for n in bondedNeighbors[a]:
+      exclude.add(n)
+      for n2 in bondedNeighbors[n]:
+        exclude.add(n2)
+    exclude = list(exclude)
 
     dots = sphere.dots()
     res = ds.score_dots(a, 1.0, sq, rad*3, 0.25, exclude, sphere.dots(), sphere.density(), False)
