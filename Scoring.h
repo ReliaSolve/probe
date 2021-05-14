@@ -209,7 +209,7 @@ namespace molprobity {
       ScoreDotsResult score_dots(iotbx::pdb::hierarchy::atom sourceAtom, double minOccupancy,
         SpatialQuery &spatialQuery, double nearbyRadius, double probeRadius,
         scitbx::af::shared<iotbx::pdb::hierarchy::atom> const &exclude,
-        scitbx::af::shared<Point> const &dots, double density, bool onlyBumps = false);
+        scitbx::af::shared<Point> const &dots, double density, bool onlyBumps);
 
       //===========================================================================
       // Seldom-used methods below here.

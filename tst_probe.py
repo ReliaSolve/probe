@@ -47,6 +47,31 @@ def RunProbeTests(inFileName):
   for i in range(maxI+1):
     extra.append(probe.ExtraAtomInfo())
 
+  # Get the bonding information we'll need to exclude our bonded neighbors
+  p = mmtbx.model.manager.get_default_pdb_interpretation_params()
+  model.set_pdb_interpretation_params(params = p)
+  model.process_input_model(make_restraints=True) # make restraints
+  geometry = model.get_restraints_manager().geometry
+  sites_cart = model.get_sites_cart() # cartesian coordinates
+  bond_proxies_simple, asu = \
+      geometry.get_all_bond_proxies(sites_cart = sites_cart)
+
+  # Make a mapping from sequence number to atom so that we can quickly look this
+  # up when finding bonded neighbors
+  # @todo There may be a faster way to find bonded neighbors that does not require
+  # this.
+  atomDict = {}
+  for a in atoms:
+    atomDict[a.i_seq] = a
+
+  # Make a dictionary for each atom listing all of its bonded neighbors
+  bondedNeighbors = {}
+  for a in atoms:
+    bondedNeighbors[a] = []
+  for bp in bond_proxies_simple:
+    bondedNeighbors[atomDict[bp.i_seqs[0]]].append(atomDict[bp.i_seqs[1]])
+    bondedNeighbors[atomDict[bp.i_seqs[1]]].append(atomDict[bp.i_seqs[0]])
+
   # Traverse the hierarchy and look up the extra data to be filled in.
   # Get a list of all the atoms in the chain while we're at it
   atoms = []
@@ -75,24 +100,36 @@ def RunProbeTests(inFileName):
   # query within 1000 Angstroms of the origin.
   sq = probe.SpatialQuery(atoms)
   nb = sq.neighbors((0,0,0), 0, 1000)
-  #print('XXX',nb)
-  #print('XXX Found this many neighbors: ', len(nb))
+  print('Found this many atoms within 1000A of the origin:', len(nb))
 
   # Construct a DotScorer object.
   # Find the radius of each atom in the structure and construct dot spheres for
   # them. Find the atoms that are bonded to them and add them to an excluded list.
   # Then compute the score for each of them and report the summed score over the
-  # whole molecule.
+  # whole molecule the way that Reduce will.
   ds = probe.DotScorer(extra)
   total = 0
+  badBumpTotal = 0
   for a in atoms:
     rad = extra[a.i_seq].vdwRadius
-    dots = cache.get_sphere(rad)
-    exclude = []
-    # @todo Fill in bonded atoms
-    res = ds.score_dots(a, 1.0, sq, 0.0001, rad*3, 0.25, exclude, dots, dots.density())
+    sphere = cache.get_sphere(rad)
+
+    # Excluded atoms that are bonded to me or to one of my neightbors.
+    # It has the side effect of excluding myself if I have any neighbors.
+    # Construct as a set to avoid duplicates.
+    exclude = set()
+    for n in bondedNeighbors[a]:
+      exclude.add(n)
+      for n2 in bondedNeighbors[n]:
+        exclude.add(n2)
+    exclude = list(exclude)
+
+    dots = sphere.dots()
+    res = ds.score_dots(a, 1.0, sq, rad*3, 0.25, exclude, sphere.dots(), sphere.density(), False)
     total += res.totalScore()
-  print('Summed probe score for molecule =',total)
+    if res.hasBadBump:
+      badBumpTotal += 1
+  print('Summed probe score for molecule =',total,'with',badBumpTotal,'bad bumps')
 
   # @todo
 
